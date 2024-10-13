@@ -10,7 +10,6 @@ require 'find'
 require 'rexml/document'
 require 'rexml/xpath'
 require 'pathname'
-require 'json'
 require 'uri'
 require 'set'
 require 'yaml'
@@ -1039,12 +1038,21 @@ def generate_sorted_paginated(site, elements_sorted, default_sort_key, n_element
       site.data['common']['platforms'],
       site.data['common']['package_manager_names'].keys)
 
-    debian_descriptions = get_debian_descriptions()
- 
+    web_descriptions = get_debian_descriptions()
+    web_descriptions = get_pip_descriptions(web_descriptions)
+
     raw_rosdeps.each do |dep_name, dep_data|
       platforms = site.data['common']['platforms']
       manager_set = Set.new(site.data['common']['package_manager_names'])
       description = ""
+
+      # if web_descriptions failed, try to get description from cache
+      if web_descriptions.length == 0 and
+          site.config['use_db_cache'] and
+          @rosdeps.has_key? dep_name and
+          @rosdeps[dep_name].has_key? 'description'
+        description = @rosdeps[dep_name]['description']
+      end
 
       platform_data = {}
       platforms.each do |platform_key, platform_details|
@@ -1056,16 +1064,8 @@ def generate_sorted_paginated(site, elements_sorted, default_sort_key, n_element
           # Get dep description from debian
           if platform_key == 'debian' and platform_data[platform_key].has_key?('bullseye')
             platform_data[platform_key]['bullseye'].each do |debian_key|
-              # zero-length debian_descriptions indicates a failed download
-              if debian_descriptions.length > 0
-                if debian_descriptions.has_key?(debian_key)
-                  description = debian_descriptions[debian_key]
-                  break
-                end
-              elsif site.config['use_db_cache'] and
-                  @rosdeps.has_key? dep_name and
-                  @rosdeps[dep_name].has_key? 'description'
-                description = @rosdeps[dep_name]['description']
+              if web_descriptions.has_key?(debian_key)
+                description = web_descriptions[debian_key]
                 break
               end
             end
@@ -1073,6 +1073,10 @@ def generate_sorted_paginated(site, elements_sorted, default_sort_key, n_element
         else
           platform_data[platform_key] = resolve_dep(platforms, manager_set, platform_key, 'any_version', dep_data)
         end
+      end
+      # if debian did not get a description, maybe we got it from pip
+      if description.empty? and web_descriptions.has_key?(dep_name)
+        description = web_descriptions[dep_name]
       end
       @rosdeps[dep_name] = {'data_per_platform' => platform_data, 'dependants_per_distro' => {}, 'description' => description}
     end

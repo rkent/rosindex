@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require 'json'
 require 'net/http'
 require 'uri'
 
 DEBIAN_URL = 'https://packages.debian.org/stable/allpackages?format=txt.gz'
+PIP_URL = 'https://raw.githubusercontent.com/rkent/ros_webdata/refs/heads/build/pip_packages.json'
 
-def get_debian_descriptions()
+def get_debian_descriptions(packages={})
     content_unicode = nil
     retry_delay = [0, 10, 60]
     retry_delay.each_with_index do |delay, idx|
@@ -36,7 +38,6 @@ def get_debian_descriptions()
         end
     end
 
-    packages = {}
     # Test for failed download
     if !content_unicode then return packages end
 
@@ -52,6 +53,22 @@ def get_debian_descriptions()
         package_name = line[0..left_paren - 2]
         package_desc = line[right_paren + 2..line.length - 1]
         packages[package_name] = package_desc
+    end
+    packages
+end
+
+def get_pip_descriptions(packages)
+    content = Net::HTTP.get(URI(PIP_URL))
+
+    # Test for failed download
+    if not content then return packages end
+
+    pip_descriptions = JSON(content)
+    pip_descriptions.each do |key, value|
+        if not packages.key?(key)
+            packages[key] = value
+            # puts "Updating #{key} with #{value}"
+        end
     end
     packages
 end
