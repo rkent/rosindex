@@ -27,6 +27,7 @@ require_relative '../_ruby_libs/asset_parsers'
 require_relative '../_ruby_libs/roswiki'
 require_relative '../_ruby_libs/lunr'
 require_relative '../_ruby_libs/dependency_descriptions'
+require_relative '../_ruby_libs/package_downloads'
 
 $fetched_uris = {}
 $debug = false
@@ -1546,10 +1547,13 @@ def generate_sorted_paginated(site, elements_sorted, default_sort_key, n_element
         packages_index[distro] = []
       end
 
+      scaled_by_distro = get_package_downloads()
+
       index = 0
       @all_repos.each do |instance_id, repo|
         repo.snapshots.each do |distro, repo_snapshot|
 
+          packages_scaled = scaled_by_distro[distro] || {}
           if repo_snapshot.version == nil then next end
 
           repo_snapshot.packages.each do |package_name, package|
@@ -1580,7 +1584,8 @@ def generate_sorted_paginated(site, elements_sorted, default_sort_key, n_element
               'pkg_deps' => p['pkg_deps'].length,
               'dependants' => p['dependants'].length,
               'readme' => readme_filtered,
-              'org' => URI(repo.uri).path.split('/')[1]
+              'org' => URI(repo.uri).path.split('/')[1],
+              'downloads' => packages_scaled[package_name] || 0
             }
 
             dputs 'indexed: ' << "#{package_name} #{instance_id} #{distro}"

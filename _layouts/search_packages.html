@@ -153,6 +153,7 @@ layout: noscroll-default
     const STAR = "\u2605";
     const LEFT_ARROW = "\u2B05"
     const RIGHT_ARROW = "\u27A1"
+    const DOWN_ARROW = "\u2B07";
 
     var initialFilter = (searchArray === undefined || searchArray === null) ?
       [] : [{field: 'id', type: 'in', value: searchArray}];
@@ -168,6 +169,7 @@ layout: noscroll-default
         { title:"Name", field:"url", width:200,
           formatter:"link", formatterParams:{labelField:"name", urlPrefix:"{{site.baseurl}}"}},
         { title:"Description", field:"description", minWidth:300},
+        { title:DOWN_ARROW, field:"downloads", width:40, headerTooltip:"package download counts, scaled 0 - 99"},
         { title:STAR, field:"released", width:40, formatter:"tickCross", headerTooltip:"release status", hozAlign:"center",
           formatterParams: {allowTruthy: true, allowEmpty: true}},
         { title:CALENDAR, field: "last_commit_time", width:80, headerHozAlign:"center", headerTooltip:"last commit date",
