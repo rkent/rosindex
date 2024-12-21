@@ -242,6 +242,7 @@ layout: default
     const STAR = "\u2605";
     const LEFT_ARROW = "\u2B05";
     const RIGHT_ARROW = "\u27A1";
+    const DOWN_ARROW = "\u2B07";
     const CIRCLED_DOT = "\u2299";
     const BOLT = "\u26A1";
     const isRepos = getIsRepos();
@@ -283,6 +284,7 @@ layout: default
         const value = cell.getValue();
         return value >= 10000 ? Math.floor(value / 1000).toString() + "K" : value.toString();
       }},
+      { title:DOWN_ARROW, field:"downloads", width:40, headerTooltip:"package download counts, scaled 0 - 99"},
       { title:"Authors", field:"authors", width:120},
       { title:"Maintainers", field:"maintainers", width:120},
       { title:"Org", field:"org", width:100},
@@ -301,7 +303,7 @@ layout: default
     // github columns don't need various fields
     if (distro == "github") {
       let new_columns = [];
-      let delete_fields = ["core", "released"];
+      let delete_fields = ["core", "released", "downloads"];
       for (let column of tableColumns) {
         if (!delete_fields.includes(column["field"])) {
           new_columns.push(column);
