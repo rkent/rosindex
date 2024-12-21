@@ -82,21 +82,10 @@ ros2_distros:
 ros_distros: []
 
 old_ros2_distros:
-  - 'ardent'
-  - 'bouncy'
-  - 'crystal'
-  - 'eloquent'
-  - 'dashing'
   - 'galactic'
-  - 'foxy'
   - 'iron'
 
 old_ros_distros:
-  - 'lunar'
-  - 'jade'
-  - 'indigo'
-  - 'hydro'
-  - 'kinetic'
   - 'melodic'
   - 'noetic'
 
