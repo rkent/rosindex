@@ -3,6 +3,11 @@ ROS Index
 
 A simple static index for known ROS packages hosted at http://index.ros.org/.
 
+Branch ros2-rkent
+---------------
+
+This branch us used by R. Kent James to demo suggested improvements to rosindex.
+
 It builds in jekyll with a plugin to clone repositories containing ROS packages, scrapes them for information, 
 and uses client-side javascript for quick searching and visualization.
 

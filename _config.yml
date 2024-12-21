@@ -15,7 +15,7 @@ google_analytics_tag_id: 'G-EVD5Z6G6NH'
 #highlighter: pygments
 
 # If true, this begins with an existing db
-use_db_cache: true
+use_db_cache: false
 db_cache_filename: _cache/_deploy_cache.db
 report_filename: _cache/_deploy_index_report.yaml
 report_diff_filename: _cache/_deploy_index_report_diff.yaml
@@ -86,21 +86,10 @@ ros_distros:
   - 'noetic'
 
 old_ros2_distros:
-  - 'ardent'
-  - 'bouncy'
-  - 'crystal'
-  - 'eloquent'
-  - 'dashing'
   - 'galactic'
-  - 'foxy'
   - 'iron'
 
 old_ros_distros:
-  - 'lunar'
-  - 'jade'
-  - 'indigo'
-  - 'hydro'
-  - 'kinetic'
   - 'melodic'
 
 # package list page
