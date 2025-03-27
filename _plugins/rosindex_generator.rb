@@ -844,10 +844,6 @@ class Indexer < Jekyll::Generator
     return rosdep_data
   end
 
-  def generate_search_deps_list(site)
-    site.pages << SearchDepsListPage.new(site)
-  end
- 
   def generate_sorted_paginated_deps(site, elements_sorted, default_sort_key, n_elements, elements_per_page, page_class)
 
     n_pages = (n_elements / elements_per_page).floor + 1
@@ -1486,16 +1482,9 @@ def generate_sorted_paginated(site, elements_sorted, default_sort_key, n_element
       site.pages << PackagePage.new(site, package_instances)
     end
 
-    # create repo list pages
-    puts ("Generating repo list pages...").blue
-
-    repos_sorted = sort_repos(site)
-    generate_sorted_paginated(site, repos_sorted, 'time', @repo_names.length, site.config['repos_per_page'], RepoListPage)
-
-    # create package list pages
-    puts ("Generating package list pages...").blue
-
-    generate_search_deps_list(site)
+    # create rosdep list and search
+    puts ("Generating rosdep list pages...").blue
+    site.pages << SearchDepsListPage.new(site)
 
     # create rosdep pages
     puts ("Generating rosdep pages...").blue
