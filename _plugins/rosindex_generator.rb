@@ -844,107 +844,6 @@ class Indexer < Jekyll::Generator
     return rosdep_data
   end
 
-  def generate_sorted_paginated_deps(site, elements_sorted, default_sort_key, n_elements, elements_per_page, page_class)
-
-    n_pages = (n_elements / elements_per_page).floor + 1
-
-    (1..n_pages).each do |page_index|
-      p_start = (page_index-1) * elements_per_page
-      elements_sliced = elements_sorted.slice(p_start, elements_per_page)
-      site.pages << page_class.new(site, default_sort_key, n_pages, page_index, elements_sliced)
-      # create page 1 without a page number or key in the url
-      if page_index == 1
-        site.pages << page_class.new(site, default_sort_key, n_pages, page_index, elements_sliced, true)
-      end
-    end
-  end
-
-def generate_sorted_paginated(site, elements_sorted, default_sort_key, n_elements, elements_per_page, page_class)
-
-    n_pages = (n_elements / elements_per_page).floor + 1
-
-    (1..n_pages).each do |page_index|
-
-      p_start = (page_index-1) * elements_per_page
-
-      elements_sorted.each do |sort_key, elements|
-        # Get a subset of the elements
-        elements_sliced = Hash[
-          elements.collect do |distro, elements_in_distro|
-            [distro, elements_in_distro.slice(p_start, elements_per_page)]
-          end
-        ]
-        site.pages << page_class.new(site, sort_key, n_pages, page_index, elements_sliced)
-        # create page 1 without a page number or key in the url
-        if sort_key == default_sort_key and page_index == 1
-          site.pages << page_class.new(site, sort_key, n_pages, page_index, elements_sliced, true)
-        end
-      end
-    end
-  end
-
-  def sort_repos(site)
-    repos_sorted = {'name' => {}, 'time' => {}, 'released' => {}}
-
-    repos_sorted_by_name = @repo_names.sort_by { |name, _| name }
-    $all_distros.collect do |distro|
-      repos_sorted['name'][distro] = repos_sorted_by_name
-
-      repos_sorted['time'][distro] = \
-      repos_sorted['name'][distro].sort_by do |_, instances|
-        instances.default.snapshots.select do |d, s|
-          distro == d and not s.nil?
-        end.map do |d,s|
-          s.data['last_commit_time'].to_s
-        end.max.to_s
-      end.reverse
-
-      repos_sorted['released'][distro] = \
-      repos_sorted['name'][distro].sort_by do |_, instances|
-        instances.default.snapshots.count do |d, s|
-          d == distro and not s.nil? and s.released
-        end
-      end.reverse
-    end
-
-    return repos_sorted
-  end
-
-  def sort_repos_filtered(site, filter)
-    repos_sorted = {'name' => {}, 'time' => {}, 'doc' => {}, 'released' => {}}
-
-    repos_filtered = @repo_names.select { |key,_| filter.include? key }
-    repos_sorted_by_name = repos_filtered.sort_by { |name, _| name }
-    $all_distros.collect do |distro|
-      repos_sorted['name'][distro] = repos_sorted_by_name
-
-      repos_sorted['time'][distro] = \
-      repos_sorted['name'][distro].sort_by do |_, instances|
-        instances.default.snapshots.select do |d, s|
-          distro == d and not s.nil?
-        end.map do |d,s|
-          s.data['last_commit_time'].to_s
-        end.max.to_s
-      end.reverse
-
-      repos_sorted['doc'][distro] = \
-      repos_sorted['name'][distro].sort_by do |_, instances|
-        instances.default.snapshots.count do |d, s|
-          d == distro and not s.nil? and not s.data['readme'].nil?
-        end
-      end.reverse
-
-      repos_sorted['released'][distro] = \
-      repos_sorted['name'][distro].sort_by do |_, instances|
-        instances.default.snapshots.count do |d, s|
-          d == distro and not s.nil? and s.released
-        end
-      end.reverse
-    end
-
-    return repos_sorted
-  end
-
   def write_release_manifests(site, repo, package_name, default)
     $all_distros.each do |distro|
       unless repo.release_manifests[distro].nil?
@@ -1492,12 +1391,6 @@ def generate_sorted_paginated(site, elements_sorted, default_sort_key, n_element
     @rosdeps.each do |dep_name, full_dep_data|
       site.pages << DepPage.new(site, dep_name, raw_rosdeps[dep_name], full_dep_data)
     end
-
-    # create contribution suggestions list pages
-    puts ("Generating contribution suggestions list page...").blue
-
-    suggestions_sorted = sort_repos_filtered(site, site.config['contribute_suggested_repos'])
-    generate_sorted_paginated(site, suggestions_sorted, 'name', suggestions_sorted['name'].length, site.config['repos_per_page'], ContributionSuggestionsPage)
 
     # populate the home page with available distros
     site.pages << HomePage.new(site)
