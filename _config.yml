@@ -79,6 +79,7 @@ ros2_distros:
   - 'kilted'
   - 'lyrical'
   - 'rolling'
+  - 'github'
 
 ros_distros: []
 
