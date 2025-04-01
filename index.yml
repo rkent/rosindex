@@ -11,4 +11,4 @@ keep_files: [cache, .git]
 
 # Sources
 rosdep_path: _remotes/rosdep
-rosdistro_paths: [_remotes/rosdistro]
+rosdistro_paths: [_remotes/rosdistro, _data]
