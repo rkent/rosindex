@@ -300,6 +300,18 @@ layout: default
       tableColumns = tableColumns.concat([repoColumn, dateColumn]);
     }
 
+    // github columns don't need various fields
+    if (distro == "github") {
+      let new_columns = [];
+      let delete_fields = ["core", "released"];
+      for (let column of tableColumns) {
+        if (!delete_fields.includes(column["field"])) {
+          new_columns.push(column);
+        }
+      }
+      tableColumns = new_columns;
+    }
+
     tableOptions = {
       columnDefaults:{ tooltip:true },
       maxHeight:"100%",

@@ -80,6 +80,7 @@ ros2_distros:
   - 'humble'
   - 'jazzy'
   - 'rolling'
+  - 'github'
 
 ros_distros:
   - 'noetic'
