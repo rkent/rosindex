@@ -2,8 +2,11 @@
 packages_per_page: 5
 repos_per_page: 5
 
+# always scrape the repo containing desktop_full, (needed for search fields)
+repo_name_always: ['variants', 'metapackages', 'navigation2']
+
 # set the following to a non-zero value for testing (limit the number of indexed repos)
-max_repos: 10
+max_repos: 20
 
 # If true, this begins with an existing db
 use_db_cache: false
