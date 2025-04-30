@@ -4,10 +4,10 @@ email: kent@caspia.com
 description: > # this means to ignore newlines until "baseurl:"
   a community-maintained index of robotics software
 baseurl: "" # the subpath of your site, e.g. /blog/
-url: "https://devindex.rosdabbler.com" # the base hostname & protocol for your site
+url: "http://index.rosdabbler.com" # the base hostname & protocol for your site
 #twitter_username: jekyllrb
 github_username:  rkent/rosindex
-keep_files: [cache, .git]
+# keep_files: [cache, .git]
 
 # Sources
 rosdep_path: _remotes/rosdep
