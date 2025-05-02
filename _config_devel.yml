@@ -16,3 +16,6 @@ checkout_threads: 1
 
 # if non-empty, only scrape these packages (useful for debugging / partial db updates)
 scrape_whitelist: []
+
+# always scrape the repo containing ros_base (needed for search fields)
+repo_name_always: ['variants', 'metapackages', 'linorobot2']
