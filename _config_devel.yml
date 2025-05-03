@@ -18,4 +18,4 @@ checkout_threads: 1
 scrape_whitelist: []
 
 # always scrape the repo containing ros_base (needed for search fields)
-repo_name_always: ['variants', 'metapackages', 'linorobot2']
+repo_name_always: ['variants', 'metapackages', 'allan_ros2']

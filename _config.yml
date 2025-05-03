@@ -99,3 +99,6 @@ max_repos: 00
 plugins:
   - jekyll-include-cache
   - jekyll-sitemap
+
+# maximum number of words to index in readme, 0 for no limit
+readme_max_words: 100
