@@ -806,15 +806,19 @@ end
     end
   end
 
-  def strip_stopwords(text)
+  def strip_stopwords(text, max_words)
     begin
-      text = text.encode('UTF-16', :undef => :replace, :invalid => :replace, :replace => "??").encode('UTF-8').split.delete_if() do |x|
+      text_words = text.encode('UTF-16', :undef => :replace, :invalid => :replace, :replace => "??").encode('UTF-8').split.delete_if() do |x|
         t = x.downcase.gsub(/[^a-z']/, '')
         t.length < @min_length || @stopwords.include?(t)
-      end.join(' ')
+      end
+      if max_words > 0
+        text_words = text_words.take(max_words)
+      end
+      text = text_words.join(' ')
     rescue ArgumentError
-      puts text.encode('UTF-16', :undef => :replace, :invalid => :replace, :replace => "??").encode('UTF-8')
-      throw
+      puts "Error stripping stopwords, leaving text unchanged"
+      text = text.encode('UTF-16', :undef => :replace, :invalid => :replace, :replace => "??").encode('UTF-8')
     end
   end
 
@@ -1200,7 +1204,7 @@ end
               readmes_text << get_text_from_html(readme['readme_rendered'])
             end
 
-            readme_filtered = self.strip_stopwords(readmes_text)
+            readme_filtered = self.strip_stopwords(readmes_text, site.config['readme_max_words'])
 
             index += 1
             core = ''
