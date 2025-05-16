@@ -16,9 +16,13 @@ scrape_config=_config/scrape.yml
 search_config=_config/search_index.yml
 
 .DEFAULT_GOAL := build
-.PHONY: build rebuild-pip-descriptions prepare-sources discover update scrape serve serve-devel test-build clean-sources clean-cache clean
+.PHONY: build rebuild-pip-descriptions rebuild-debian-descriptions prepare-sources discover \
+        update scrape serve serve-devel test-build clean-sources clean-cache clean
+
 PIP_FILE := _artifacts/pip_packages.json
 PIP_SCRIPT := _scripts/pip_packages.py
+DEBIAN_FILE := _artifacts/debian_packages.json
+DEBIAN_SCRIPT := _scripts/debian_descriptions.rb
 
 $(PIP_FILE):
 	@echo "Get pip descriptions file"
@@ -28,10 +32,18 @@ rebuild-pip-descriptions:
 	@echo "rebuild pip descriptions file"
 	python3 $(PIP_SCRIPT)
 
-build: rebuild-pip-descriptions prepare-sources
+$(DEBIAN_FILE):
+	@echo "Get debian descriptions file"
+	ruby $(DEBIAN_SCRIPT)
+
+rebuild-debian-descriptions:
+	@echo "rebuild debian descriptions file"
+	ruby $(DEBIAN_SCRIPT)
+
+build: rebuild-pip-descriptions rebuild-debian-descriptions prepare-sources
 	bundle exec jekyll build --verbose --trace -d $(site_path) --config=$(config_file),$(index_file)
 
-prepare-sources: $(PIP_FILE)
+prepare-sources: $(PIP_FILE) $(DEBIAN_FILE)
 	mkdir -p $(remotes_dir)
 	vcs import --input $(remotes_file) --force $(remotes_dir)
 	vcs pull $(remotes_dir)
