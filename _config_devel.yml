@@ -16,3 +16,7 @@ checkout_threads: 1
 
 # if non-empty, only scrape these packages (useful for debugging / partial db updates)
 scrape_whitelist: []
+
+# Override url and baseurl for local testing
+url: localhost:4000
+baseurl: ''
