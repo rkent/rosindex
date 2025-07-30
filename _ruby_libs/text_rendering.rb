@@ -71,6 +71,7 @@ def get_md_rst_txt(site, path, glob, raw_uri, browse_uri)
 
   file_files = Dir.glob(File.join(path,glob), File::FNM_CASEFOLD)
   file_files.each do |file_path|
+    if File.directory?(file_path) then next end
     file_name = File.basename(file_path)
     case File.extname(file_path)
     when '.md'
@@ -78,13 +79,6 @@ def get_md_rst_txt(site, path, glob, raw_uri, browse_uri)
     when '.rst'
       file_rst = IO.read(file_path, :encoding=>'utf-8')
       file_md = rst_to_md(file_rst)
-    when ''
-      if not File.directory?(file_path)
-        file_txt = IO.read(file_path, :encoding=>'utf-8')
-        file_md = "```\n" + file_txt + "\n```"
-      else
-        next
-      end
     else
       file_txt = IO.read(file_path, :encoding=>'utf-8')
       file_md = "```\n" + file_txt + "\n```"
