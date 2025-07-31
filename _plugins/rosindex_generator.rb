@@ -1136,10 +1136,6 @@ end
       # create the page for the default instance
       site.pages << RepoPage.new(site, repo_instances, repo_instances.default, true)
 
-      # create pages for each repo instance
-      repo_instances.instances.each do |instance_id, instance|
-        site.pages << RepoPage.new(site, repo_instances, instance, false)
-      end
     end
 
     # create package pages
@@ -1162,8 +1158,11 @@ end
     # create rosdep pages
     puts ("Generating rosdep pages...").blue
 
+    rosdep_count = 0
     @rosdeps.each do |dep_name, full_dep_data|
       site.pages << DepPage.new(site, dep_name, raw_rosdeps[dep_name], full_dep_data)
+      rosdep_count += 1
+      break if site.config.has_key?('max_rosdeps') && rosdep_count >= site.config['max_rosdeps']
     end
 
     # populate the home page with available distros
