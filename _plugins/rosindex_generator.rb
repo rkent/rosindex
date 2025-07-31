@@ -945,6 +945,12 @@ end
         if not site.config['repo_name_always'].include?(repo_item['name']) and \
           not @repo_names.has_key?(repo_item['name']) and site.config['max_repos'] > 0 and @repo_names.length > site.config['max_repos'] then next end
 
+        # repo names with redirects crash if the name has a dot
+        if repo_item['name'].include?('.') then
+          puts ("repo " + repo_item['name'] + " contains a period, skipping").red
+          next
+        end
+
         begin
           repo = Repo.new(
             repo_item['name'],
