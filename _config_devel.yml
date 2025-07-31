@@ -21,3 +21,6 @@ scrape_whitelist: []
 # Override url and baseurl for local testing
 url: http://localhost:4000
 baseurl: ''
+
+rosdistro_paths: [_remotes/rosdistro, _data]
+repo_name_always: ['variants', 'metapackages', 'autorobo.universe']

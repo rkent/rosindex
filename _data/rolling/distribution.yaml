@@ -1,0 +1,7 @@
+---
+repositories:
+  autorobo.universe:
+    doc:
+      type: git
+      url: https://github.com/automotiveaichallenge/autoware-practice.gi
+      version: main

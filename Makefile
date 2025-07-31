@@ -46,7 +46,7 @@ $(DEBIAN_FILE):
 
 discover: prepare-sources
 	@echo "Rebuild discovery file that contains discovered repos"
-	bundle exec $(DISCOVERY_SCRIPT) --config=$(config_file),$(index_file)
+	bundle exec $(DISCOVERY_SCRIPT) --config=$(config_file),$(index_file),$(devel_config_file)
 
 build: rebuild-dep-descriptions discover prepare-sources
 	bundle exec jekyll build --verbose --trace -d $(site_path) --config=$(config_file),$(index_file)
