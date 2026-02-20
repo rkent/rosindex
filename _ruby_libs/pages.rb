@@ -34,7 +34,7 @@ class DepPage < Jekyll::Page
 
     self.data['dep_name'] = dep_name
     self.data['dep_data'] = dep_data
-    self.data['title'] = 'rosdep System Dependency: ' + dep_name
+    self.data['title'] = dep_name + ' - rosdep System Dependency Overview'
 
     self.data['dep_data_per_platform'] = full_dep_data['data_per_platform']
     self.data['dependants_per_distro'] = full_dep_data['dependants_per_distro']
@@ -44,35 +44,36 @@ end
 
 
 class RepoPage < Jekyll::Page
-  def initialize(site, instances, repo, default)
+  def initialize(site, instances)
 
-    basepath = File.join('r', repo.name)
+    basepath = File.join('r', instances.name)
 
     @site = site
     @base = site.source
-    @dir = if default then basepath else File.join(basepath, repo.id) end
+    @dir = basepath
     @name = 'index.html'
 
     self.process(@name)
     self.read_yaml(File.join(@base, '_layouts'),'repo_instance.html')
 
-    self.data['instance'] =   repo
-    self.data['repo'] =   repo
-    if default then
-      self.data['redirect_from'] = [ File.join('repos', repo.name)]
-      instances.instances.each do |id, repo|
-        self.data['redirect_from'] << File.join('r', repo.name, id)
-      end
+    self.data['redirect_from'] = [ File.join('repos', instances.name) + '/']
+    instances.instances.each do |id, repo_inst|
+      self.data['redirect_from'] << File.join('r', repo_inst.name, id) + '/'
     end
 
-    self.data['instances'] = instances.instances
-    self.data['instance_base_url'] = basepath
-    self.data['instance_index_url'] = File.join('repos', repo.name)
-    self.data['default_instance_id'] = instances.default.id
+    self.data['instances'] = instances
+    self.data['title'] = instances.name + ' - ROS Repository Overview'
+
+    # Use the same logic for repo selection as packages.
+    # This could likely be collected earlier in a simpler format.
+    all_snapshots = {}
+    instances.instances.each do |id, repo|
+      all_snapshots = all_snapshots.merge(repo.snapshots)
+    end
 
     self.data['available_distros'],
     self.data['available_older_distros'],
-    self.data['n_available_older_distros'] = get_available_distros(site, repo.snapshots)
+    self.data['n_available_older_distros'] = get_available_distros(site, all_snapshots)
     self.data['all_distros'] = site.config['distros'] + site.config['old_distros']
 
     self.data['default_distro'] = self.data['available_distros'].keys.first or
@@ -123,13 +124,19 @@ class PackagePage < Jekyll::Page
     self.process(@name)
     self.read_yaml(File.join(@base, '_layouts'),'package.html')
     self.data['package_instances'] = package_instances
+
+    # Redirect from retired urls in #483
+    self.data['redirect_from'] = []
+    package_instances.instances.each_key do |instance_id|
+      self.data['redirect_from'].append(File.join('p', package_instances.name, instance_id) + '/')
+    end
+
     self.data['package_name'] = package_instances.name
-    self.data['title'] = 'ROS Package: ' + package_instances.name
+    self.data['title'] = package_instances.name + ' - ROS Package Overview'
 
     self.data['instances'] = package_instances.instances
 
-    self.data['instance_index_url'] = File.join('packages',package_instances.name)
-    self.data['instance_base_url'] = @dir
+    self.data['redirect_from'] = [ File.join('packages',package_instances.name) + '/']
 
     self.data['available_distros'],
     self.data['available_older_distros'],
@@ -154,6 +161,7 @@ class StatsPage < Jekyll::Page
     self.process(@name)
     self.read_yaml(File.join(@base, '_layouts'),'stats.html')
 
+    self.data['title'] = 'Statistics - ROS Index'
     self.data['n_packages'] = package_names.length
     self.data['n_repos'] = all_repos.length
     self.data['n_errors'] = errors.length

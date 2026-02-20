@@ -75,6 +75,9 @@ layout: default
       <p>
         <a href="https://docs.ros.org/en/jazzy/Releases/Release-Jazzy-Jalisco.html">ROS 2 Jazzy</a>
       </p>
+      <p>
+        <a href="https://docs.ros.org/en/kilted/Releases/Release-Kilted-Kaiju.html">ROS 2 Kilted</a>
+      </p>
       <h2>Development Distribution</h2>
       <p>
         <a href="http://docs.ros.org/en/rolling/Releases/Release-Rolling-Ridley.html">ROS 2 Rolling</a>
@@ -263,7 +266,7 @@ layout: default
         headerTooltip:"last commit date", sorter:"date", sorterParams:{format:"yyyy-MM-dd"}
       };
     repoColumn =
-      { title:"Repo", field:"instance", width:100,
+      { title:"Repo", field:"repo", width:100,
         formatter:"link", formatterParams:{labelField:"repo", url:(cell) => {
           return `{{site.baseurl}}/r/${cell.getValue()}/#${distro}`}}
       };
@@ -289,7 +292,6 @@ layout: default
       { title:"Maintainers", field:"maintainers", width:120},
       { title:"Org", field:"org", width:100},
       { title:"score", field:"score", width:60, sorter:"number", visible:false},
-      { title:"instance", field:"instance", width:100, visible:false},
     ];
 
     if (isRepos) {

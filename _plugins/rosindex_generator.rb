@@ -120,6 +120,7 @@ def resolve_dep(ps, ms, os, ver, data)
   if data.is_a?(Hash)
     if data.key?(os) then return resolve_dep(ps, ms, os, ver, data[os]) end
     if data.key?(ver) then return resolve_dep(ps, ms, os, ver, data[ver]) end
+    if data.key?('*') then return resolve_dep(ps, ms, os, ver, data['*']) end
     if data.key?('source') and data['source'].key?('uri') then return data['source']['uri'] end
     if data.key?('packages') then return data['packages'] end
     ms.each do |manager_name, manager_oss|
@@ -128,6 +129,34 @@ def resolve_dep(ps, ms, os, ver, data)
   end
 
   return []
+end
+
+def get_package_link(platform_key, pkg_name, version_key)
+  # get a link for info on pkg_name on platform platform_key
+  case platform_key
+  when 'ubuntu'
+    if ['noble', 'jammy', 'plucky', 'questing', 'resolute'].include?(version_key) then
+      return "https://packages.ubuntu.com/#{version_key}/#{pkg_name}"
+    else
+      return nil
+    end
+  when 'debian'
+    if ['bullseye', 'bookworm', 'trixie', 'forky','sid'].include?(version_key) then
+      return "https://packages.debian.org/#{version_key}/#{pkg_name}"
+    else
+      return nil
+    end
+  when 'fedora'
+    if ['41', '42', '43'].include?(version_key) then
+      return "https://packages.fedoraproject.org/pkgs/#{pkg_name}/#{pkg_name}/"
+    else
+      return nil
+    end
+  when 'osx'
+    return "https://formulae.brew.sh/formula/#{pkg_name}"
+  end
+
+  return nil
 end
 
 def expand_package_deps(package_name, package_names, deps, distro)
@@ -341,22 +370,6 @@ class Indexer < Jekyll::Generator
       # extract other standard exports
       deprecated = REXML::XPath.first(manifest_doc, "/package/export/deprecated/text()").to_s
 
-      # extract rosindex exports
-      tags = REXML::XPath.each(manifest_doc, "/package/export/rosindex/tags/tag/text()").map { |t| t.to_s }
-      nodes = REXML::XPath.each(manifest_doc, "/package/export/rosindex/nodes").map { |nodes|
-        case nodes.attributes["format"]
-        when "hdf"
-          get_hdf(nodes.text)
-        else
-          REXML::XPath.each(manifest_doc, "/package/export/rosindex/nodes/node").map { |node|
-            {
-              'name' => REXML::XPath.first(node,'/name/text()').to_s,
-              'description' => REXML::XPath.first(node,'/description/text()').to_s,
-              'ros_api' => get_ros_api(REXML::XPath.first(node,'/description/api'))
-            }
-          }
-        end
-      }
 
       # compute the relative path from the root of the repo to this directory
       package_relpath = Pathname.new(File.join(*path)).relative_path_from(Pathname.new(checkout_path))
@@ -457,9 +470,6 @@ class Indexer < Jekyll::Generator
         'dependants' => {},
         # exports
         'deprecated' => deprecated,
-        # rosindex metadata
-        'tags' => tags,
-        'nodes' => nodes,
         # readme
         'readmes' => readmes,
         # changelog
@@ -489,7 +499,7 @@ class Indexer < Jekyll::Generator
     Find.find(local_path) do |path|
       if FileTest.directory?(path)
         # skip certain paths
-        if (File.basename(path)[0] == ?.) or File.exist?(File.join(path,'CATKIN_IGNORE')) or File.exist?(File.join(path,'AMENT_IGNORE')) or File.exist?(File.join(path,'.rosindex_ignore'))
+        if (File.basename(path)[0] == ?.) or File.exist?(File.join(path,'CATKIN_IGNORE')) or File.exist?(File.join(path,'AMENT_IGNORE')) or File.exist?(File.join(path,'COLCON_IGNORE')) or File.exist?(File.join(path,'.rosindex_ignore'))
           Find.prune
         end
 
@@ -650,11 +660,10 @@ end
 
       # add this package to the global package dict
       @package_names[package_name].instances[repo.id] = repo
-      @package_names[package_name].tags = Set.new(@package_names[package_name].tags).merge(package_data['tags']).to_a
 
       # add this package as the default for this distro
-      if @repo_names[repo.name].default
-        dputs " --- Setting repo instance " << repo.id << "as default for package " << package_name << " in distro " << distro
+      if @repo_names[repo.name].defaults[distro]
+        dputs " --- Adding packages to repo " << repo.id << "as default for package " << package_name << " in distro " << distro
         @package_names[package_name].repos[distro] = repo
         @package_names[package_name].snapshots[distro] =  package
       end
@@ -889,12 +898,21 @@ end
       platforms.each do |platform_key, platform_details|
         if platform_details['versions'].size > 0
           platform_data[platform_key] = {}
-          platform_details['versions'].each do |version_key, version_name|
-            platform_data[platform_key][version_key] = resolve_dep(platforms, manager_set, platform_key, version_key, dep_data)
+          platform_details['versions'].each_key do |version_key|
+            packages = resolve_dep(platforms, manager_set, platform_key, version_key, dep_data)
+            if packages.is_a?(Array)
+              platform_data[platform_key][version_key] = packages.map { |pkg_name|
+                [pkg_name, get_package_link(platform_key, pkg_name, version_key)]
+              }
+            else
+              # probably an old source entry, see libaria on debian Wheezy
+              platform_data[platform_key][version_key] = [[packages, nil]]
+            end
           end
           # Get dep description from debian
-          if platform_key == 'debian' and platform_data[platform_key].has_key?('bullseye')
-            platform_data[platform_key]['bullseye'].each do |debian_key|
+          if platform_key == 'debian'
+            platform_data[platform_key]['bullseye'].each do |key_and_link|
+              debian_key = key_and_link[0]
               # zero-length debian_descriptions indicates a failed download
               if debian_descriptions.length > 0
                 if debian_descriptions.has_key?(debian_key)
@@ -910,7 +928,11 @@ end
             end
           end
         else
-          platform_data[platform_key] = resolve_dep(platforms, manager_set, platform_key, 'any_version', dep_data)
+          packages = resolve_dep(platforms, manager_set, platform_key, 'any_version', dep_data)
+          # all platforms that don't have versions currently don't have links available
+          platform_data[platform_key] = packages.map { |pkg_name|
+            [pkg_name, nil]
+          }
         end
       end
       # if debian did not get a description, maybe we got it from pip
@@ -982,7 +1004,7 @@ end
 
         # store this repo in the name index
         @repo_names[repo.name].instances[repo.id] = repo
-        @repo_names[repo.name].default = repo
+        @repo_names[repo.name].defaults[distro] = repo
       rescue IndexException => e
         @errors[repo_item['name']] << e
       end
@@ -1134,7 +1156,7 @@ end
       dputs " - creating pages for repo "+repo_name+"..."
 
       # create the page for the default instance
-      site.pages << RepoPage.new(site, repo_instances, repo_instances.default, true)
+      site.pages << RepoPage.new(site, repo_instances)
 
     end
 
@@ -1224,7 +1246,7 @@ end
               'baseurl' => site.config['baseurl'],
               'url' => File.join('/p',package_name)+"#"+distro,
               'last_commit_time' => repo_snapshot.data['last_commit_time'],
-              'tags' => (p['tags'] + package_name.split('_')) * " ",
+              'tags' => (package_name.split('_')) * " ",
               'package' => package_name,
               'repo' => repo.name,
               'core' => core,
@@ -1234,7 +1256,6 @@ end
               'maintainers' => p['maintainers'] * ", ",
               'authors' => p['authors'] * ", ",
               'distro' => distro,
-              'instance' => repo.name + '/' + repo.id,
               'pkg_deps' => p['pkg_deps'].length,
               'dependants' => p['dependants'].length,
               'readme' => readme_filtered,
@@ -1297,15 +1318,15 @@ end
                 if version_name.empty?
                   version_name = version_key.capitalize
                 end
-                names_for_version.collect do |name|
-                  aliases.add(name)
-                  "#{name} (#{platform_name} #{version_name})"
+                names_for_version.collect do |name_and_link|
+                  aliases.add(name_and_link[0])
+                  "#{name_and_link[0]} (#{platform_name} #{version_name})"
                 end.join(' : ')
               end.compact.join(' : ')
             else
-              data.collect do |name|
-                aliases.add(name)
-                "#{name} (#{platform_name})"
+              data.collect do |name_and_link|
+                aliases.add(name_and_link[0])
+                "#{name_and_link[0]} (#{platform_name})"
               end.join(' : ')
             end
           end.compact.join(' : '),
