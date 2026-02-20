@@ -653,7 +653,7 @@ end
       snapshot.packages[package_name] = package
 
       # collect tags from discovered packages
-      repo.tags = Set.new(repo.tags).merge(package_data['tags'])
+      repo.tags = Set.new(repo.tags)
 
       # add any tags placed on a repo
       repo.tags = repo.tags.merge(data['tags']).to_a
