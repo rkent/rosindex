@@ -87,7 +87,7 @@ no_scroll: true
       return gData_promise;
     }
     gData_promise =
-      fetch(`{{ site.baseurl }}/search/deps/data.0.json`)
+      fetch(`{{ site.baseurl }}/search/deps/data.0.json?v={{ site.time | date: '%s' }}`)
         .then((response) => response.json());
 
     return gData_promise;
@@ -99,7 +99,7 @@ no_scroll: true
       return gIndex_promise;
     }
     gIndex_promise =
-      fetch(`{{ site.baseurl }}/search/deps/index.0.json`)
+      fetch(`{{ site.baseurl }}/search/deps/index.0.json?v={{ site.time | date: '%s' }}`)
         .then((response) => response.json())
         .then((indexData) => {
           return lunr.Index.load(indexData);
