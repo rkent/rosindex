@@ -2,14 +2,14 @@
 
 <div id="distro-switch" class="btn-group w-100" role="group">
   {% for distro in site.distros %}
-    <button type="button" id="{{ distro }}-option" class="distro-button btn btn-xs {% if page.available_distros[distro] %}btn-primary{% else %}btn-light border{% endif %}" data="{{ distro }}">
+    <button type="button" id="{{ distro }}-option" class="distro-button btn btn-xs {% if page.available_distros[distro] %}btn-primary{% else %}btn-light{% endif %}" data="{{ distro }}">
       {{ distro }}
     </button>
   {% endfor %}
 
   <!-- Older distros -->
   <div class="btn-group dropdown" role="group">
-    <button type="button" class="btn btn-xs dropdown-toggle {% if page.n_available_older_distros > 0 %}btn-primary{% else %}btn-light border{% endif %}" data-bs-toggle="dropdown" aria-expanded="false" id="older-distro-button">
+    <button type="button" class="btn btn-xs dropdown-toggle {% if page.n_available_older_distros > 0 %}btn-primary{% else %}btn-light{% endif %}" data-bs-toggle="dropdown" aria-expanded="false" id="older-distro-button">
       <span id="older-label">Older</span>
     </button>
     <ul class="dropdown-menu dropdown-menu-end">
