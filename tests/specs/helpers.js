@@ -4,10 +4,10 @@ exports.PACKAGE_PAGE = '/p/abb_common/';
 exports.REPO_PAGE = '/r/abb/';
 exports.HOME_PAGE = '/';
 
-// Wait until the page's jQuery and Bootstrap plugins are loaded.
+// Wait until jQuery and the Bootstrap components are loaded.
 exports.waitForBootstrap = async (page) => {
-  await page.waitForFunction(() => window.jQuery && window.jQuery.fn.tab && window.jQuery.fn.dropdown);
+  await page.waitForFunction(() => window.jQuery && window.bootstrap && window.bootstrap.Tab && window.bootstrap.Dropdown);
 };
 
-// Bootstrap 3 hides inactive panes with display:none; "visible" is the
+// Bootstrap hides inactive panes with display:none; "visible" is the
 // behavioral check, independent of class names.

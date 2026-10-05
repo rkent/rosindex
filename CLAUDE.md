@@ -18,9 +18,16 @@ Key locations:
 - **A full build (`make build`) is impractical during development.** Use the Makefile target `test-build` instead; it uses `_config_devel.yml` to limit the scope.
 - After a build, the output is a static website in `_site/`. That folder is sufficient to host or inspect the result; no further server is required.
 
-## UI tests (Bootstrap upgrade preparation)
+## Bootstrap
 
-The site uses Bootstrap v3.3.2 (`bootstrap/`), which is to be upgraded. `tests/` holds Playwright browser tests that pin down current behavior (tabs, dropdowns, distro switch, responsive layout, visual snapshots) so regressions are visible after the upgrade.
+The site uses Bootstrap 5.3 with the Bootswatch Lumen theme, vendored as precompiled files in `bootstrap/` (`css/bootstrap.min.css` is the Lumen build, `js/bootstrap.bundle.min.js` includes Popper, `icons/` is Bootstrap Icons). There is no npm/SCSS build for Bootstrap; to upgrade, replace those files.
+
+- The site was migrated from Bootstrap 3 (Lumen 3.3.2). The top of `_sass/_base.scss` holds overrides that keep the Lumen 3 look (14px root font, link underline on hover, table and card spacing, row gutters); check them when upgrading.
+- jQuery is still used by the site's own JS, but Bootstrap components are driven through `data-bs-*` attributes or the native API (`bootstrap.Tab.getOrCreateInstance(el).show()`), not jQuery plugins.
+
+## UI tests
+
+`tests/` holds Playwright browser tests that pin down behavior (tabs, dropdowns, distro switch, responsive layout, visual snapshots).
 
 - Build first (`docker/run.sh make test-build`), then run `docker/test.sh`. It runs the tests in the official Playwright Docker image (the Jekyll image has no npm or browsers) against `_site/`, served with `python3 -m http.server`. Extra arguments pass through, e.g. `docker/test.sh specs/tabs.spec.js`.
 - `docker/test.sh --update-snapshots` regenerates the visual baselines in `tests/specs/__screenshots__/`; only do this deliberately (baselines should be recorded on the current Bootstrap version). Baselines are rendered in the container, so don't generate them on the host.

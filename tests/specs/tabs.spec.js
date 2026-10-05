@@ -21,7 +21,7 @@ test('clicking a tab shows its pane and hides the others', async ({ page }) => {
   await tabs.locator(`a[href="#${distro}-deps"]`).click();
   await expect(page.locator(`#${distro}-deps`)).toBeVisible();
   await expect(page.locator(`#${distro}-overview`)).toBeHidden();
-  await expect(tabs.locator(`a[href="#${distro}-deps"]`).locator('xpath=..')).toHaveClass(/active/);
+  await expect(tabs.locator(`a[href="#${distro}-deps"]`)).toHaveAttribute('aria-selected', 'true');
 });
 
 test('URL fragment opens the matching tab on load', async ({ page }) => {
@@ -35,9 +35,7 @@ test('URL fragment opens the matching tab on load', async ({ page }) => {
   await expect(page.locator(`#${distro}-deps`)).toBeVisible();
 });
 
-test('shown event on a tab updates the URL hash', async ({ page }) => {
-  // package_body_tabs.js listens for 'shown'; Bootstrap 4+ renamed it 'shown.bs.tab'.
-  // This test is expected to need the handler updated during the upgrade.
+test('clicking a tab updates the URL hash', async ({ page }) => {
   const { tabs, distro } = await firstTabs(page);
   await tabs.locator(`a[href="#${distro}-assets"]`).click();
   await expect(page).toHaveURL(new RegExp(`#${distro}-assets$`));
