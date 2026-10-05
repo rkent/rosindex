@@ -10,7 +10,7 @@ function populateContributeLists(list, response) {
   response.json().then(items => {
     if (response.ok) {
       // Write the html for the list items.
-      var html = '<table class="table table-condensed table-striped"><tbody>';
+      var html = '<table class="table table-sm table-striped"><tbody>';
       for (const item of items) {
         html += '<tr><td><a href="' + item['html_url'] + '">#';
         html += item['number'] + '</td><td>' + item['title'] + '</a></td></tr>';

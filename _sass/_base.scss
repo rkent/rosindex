@@ -28,16 +28,7 @@
     border-radius: 1em;
 }
 
-.label {
-  line-height: 24px
-}
-
-.glyphicon-none:before {
-    content: "\2122";
-    color: transparent !important;
-}
-
-table.table a.label {
+table.table a.badge {
   text-decoration: none;
 }
 
@@ -76,7 +67,7 @@ a.endoftree {
   text-decoration: none;
 }
 
-table.table a .glyphicon {
+table.table a .bi {
   text-decoration: none;
 }
 
@@ -92,12 +83,18 @@ table.table {
   margin-bottom: 0px;
 }
 
-div.panel-heading {
+div.card-header {
   padding-left: 10px;
   padding-right: 10px;
 }
 
-div.panel-body {
+// Bootstrap 3 .panel-title dimensions
+.card-header .card-title {
+  margin: 0;
+  font-size: 16px;
+}
+
+div.card-body {
   padding: 10px;
   overflow-x: auto;
 }
@@ -120,7 +117,7 @@ div code {
   white-space: nowrap;
 }
 
-label.control-label {
+label.col-form-label {
   font-weight: bold;
 }
 
@@ -136,26 +133,19 @@ table.table thead a:not(.btn) {
   color: #555555;
 }
 
-.nav-tabs>li.better-tabs.active>a {
-  background-color: #ffffff;
-}
-
-.nav-tabs>li.better-tabs>a {
+.nav-tabs .better-tabs>.nav-link {
   background-color: #eeeeee;
 }
 
-.list-group-horizontal.list-group-justified {
-  display: table;
-  width: 100%;
-  table-layout: fixed;
+.nav-tabs .better-tabs>.nav-link.active {
+  background-color: #ffffff;
 }
 
 .list-group-horizontal>a.list-group-item {
-  display: table-cell;
   overflow-x: hidden;
 }
 
-.list-group-horizontal>a.list-group-item>span.glyphicon {
+.list-group-horizontal>a.list-group-item>span.bi {
   margin: 0px;
 }
 
@@ -406,23 +396,6 @@ code {
     }
 }
 
-.list-group-horizontal .list-group-item {
-  display: inline;
-}
-.list-group-horizontal .list-group-item {
-  margin-bottom: 0;
-  margin-left:-4px;
-  margin-right: 0;
-}
-.list-group-horizontal .list-group-item:first-child {
-  border-top-right-radius:0;
-  border-bottom-left-radius:4px;
-}
-.list-group-horizontal .list-group-item:last-child {
-  border-top-right-radius:4px;
-  border-bottom-left-radius:0;
-}
-
 .list-group.list-group-root {
   padding: 0;
   margin-bottom: 0;
@@ -447,6 +420,24 @@ code {
     padding-left: 60px;
 }
 
+// Bootstrap 5 dropped .btn-xs; these are the Bootstrap 3 dimensions.
+.btn-xs {
+  --bs-btn-padding-y: 1px;
+  --bs-btn-padding-x: 5px;
+  --bs-btn-font-size: 12px;
+  --bs-btn-border-radius: 3px;
+  line-height: 1.5;
+}
+
+// Older distros dropdown: JS marks the <li>, Bootstrap 5 styles the item.
+.older-distro-option.active > .dropdown-item {
+  color: var(--bs-dropdown-link-active-color);
+  background-color: var(--bs-dropdown-link-active-bg);
+}
+.older-distro-option.disabled > .dropdown-item {
+  color: var(--bs-dropdown-link-disabled-color);
+}
+
 .btn-primary.active:hover,
 .btn-primary.active:focus {
   background-color: #106a8c;
@@ -462,19 +453,6 @@ a.question-description-toggle {
 }
 a.question-link {
   float: right;
-}
-
-/* Collapsable filter and search. */
-.collapsed .collapsing-icon::before {
-  // glyphicon-chevron-down
-  content: "\e114";
-}
-.collapsing-icon::before {
-  // glyphicon-chevron-up
-  content: "\e113";
-}
-.collapsing-header:hover {
-  text-decoration: underline;
 }
 
 /* checkbox in search_package */
