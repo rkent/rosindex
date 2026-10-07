@@ -33,6 +33,12 @@ a:where(:hover) {
   padding: 8px 15px;
 }
 
+// Lumen 5 gives disabled dropdown items the same grey as enabled ones;
+// Lumen 3 drew them much lighter.
+.dropdown-menu {
+  --bs-dropdown-link-disabled-color: #eeeeee;
+}
+
 // Bootstrap 3 panels, wells and list groups were spaced apart.
 .card,
 .list-group {
@@ -507,12 +513,10 @@ code {
 }
 
 // Older distros dropdown: JS marks the <li>, Bootstrap 5 styles the item.
+// Unavailable distros use Bootstrap's own .dropdown-item.disabled.
 .older-distro-option.active > .dropdown-item {
   color: var(--bs-dropdown-link-active-color);
   background-color: var(--bs-dropdown-link-active-bg);
-}
-.older-distro-option.disabled > .dropdown-item {
-  color: var(--bs-dropdown-link-disabled-color);
 }
 
 .btn-primary.active:hover,

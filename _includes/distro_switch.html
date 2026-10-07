@@ -15,7 +15,8 @@
     <ul class="dropdown-menu dropdown-menu-end">
       {% for distro in site.old_distros %}
         <li data="{{ distro }}" id="{{ distro }}-option" class="{% unless page.available_older_distros[distro] %}disabled{% endunless %} older-distro-option">
-          <a class="dropdown-item" href="#{{ distro }}" data="{{ distro }}" id="{{ distro }}-button">{{ distro }}</a>
+          <a class="dropdown-item{% unless page.available_older_distros[distro] %} disabled{% endunless %}" href="#{{ distro }}" data="{{ distro }}" id="{{ distro }}-button"
+             {% unless page.available_older_distros[distro] %}aria-disabled="true" tabindex="-1"{% endunless %}>{{ distro }}</a>
         </li>
       {% endfor %}
     </ul>
