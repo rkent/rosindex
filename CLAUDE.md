@@ -20,7 +20,7 @@ Key locations:
 
 ## Bootstrap
 
-The site uses Bootstrap 5.3 with the Bootswatch Lumen theme, vendored as precompiled files in `bootstrap/` (`css/bootstrap.min.css` is the Lumen build, `js/bootstrap.bundle.min.js` includes Popper, `icons/` is Bootstrap Icons). There is no npm/SCSS build for Bootstrap; to upgrade, replace those files.
+The site uses Bootstrap 5.3 with the Bootswatch Lumen theme, loaded from cdn.jsdelivr.net in `_layouts/default.html` (`bootswatch@<ver>/dist/lumen/bootstrap.min.css`, `bootstrap@<ver>/dist/js/bootstrap.bundle.min.js` which includes Popper, and `bootstrap-icons@<ver>/font/bootstrap-icons.min.css`). There is no npm/SCSS build for Bootstrap; to upgrade, bump the pinned versions in those URLs. Builds and UI tests therefore need network access.
 
 - The site was migrated from Bootstrap 3 (Lumen 3.3.2). The top of `_sass/_base.scss` holds overrides that keep the Lumen 3 look (14px root font, link underline on hover, table and card spacing, row gutters); check them when upgrading.
 - jQuery is still used by the site's own JS, but Bootstrap components are driven through `data-bs-*` attributes or the native API (`bootstrap.Tab.getOrCreateInstance(el).show()`), not jQuery plugins.
