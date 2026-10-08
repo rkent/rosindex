@@ -23,6 +23,15 @@ for (const [name, width] of Object.entries(widths)) {
   });
 }
 
+// Package page content that changes with each upstream release. XPath on the
+// visible labels keeps the masks independent of class names.
+const volatile = (page) => [
+  ...['Version', 'Last Updated'].map((label) =>
+    page.locator(`xpath=//td[normalize-space()="${label}"]/following-sibling::td[1]`)),
+  ...['Maintainers', 'README', 'CHANGELOG'].map((label) =>
+    page.locator(`xpath=//div[normalize-space()="${label}"]/following-sibling::div[1]`)),
+];
+
 test('visual baseline: home and package page', async ({ page }) => {
   for (const [name, width] of Object.entries(widths)) {
     await page.setViewportSize({ width, height: 900 });
@@ -30,7 +39,7 @@ test('visual baseline: home and package page', async ({ page }) => {
       await page.goto(url);
       await page.waitForLoadState('networkidle');
       await expect(page).toHaveScreenshot(`${label}-${name}.png`, {
-        mask: [page.locator('time'), page.locator('[class*="count"]')],
+        mask: [page.locator('time'), page.locator('[class*="count"]'), ...volatile(page)],
       });
     }
   }

@@ -1,7 +1,8 @@
-// Pages used by the tests. Packages/repos are chosen because they exist in the
-// test-build output; adjust if the devel config changes the package set.
-exports.PACKAGE_PAGE = '/p/abb_common/';
-exports.REPO_PAGE = '/r/abb/';
+// Pages used by the tests. geometry2 is in repo_name_always in
+// _config_devel.yml, so it is always in the test-build output. tf2_ros_py is
+// ROS 2 only, so its "Older" dropdown has both available and unavailable distros.
+exports.PACKAGE_PAGE = '/p/tf2_ros_py/';
+exports.REPO_PAGE = '/r/geometry2/';
 exports.HOME_PAGE = '/';
 
 // Wait until jQuery and the Bootstrap components are loaded.
