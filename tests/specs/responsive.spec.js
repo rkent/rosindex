@@ -32,7 +32,7 @@ const volatile = (page) => [
     page.locator(`xpath=//div[normalize-space()="${label}"]/following-sibling::div[1]`)),
 ];
 
-test('visual baseline: home and package page', async ({ page }) => {
+test('visual baseline: home and package page', { tag: '@visual' }, async ({ page }) => {
   for (const [name, width] of Object.entries(widths)) {
     await page.setViewportSize({ width, height: 900 });
     for (const [label, url] of [['home', HOME_PAGE], ['package', PACKAGE_PAGE]]) {

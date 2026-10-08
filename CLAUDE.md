@@ -31,4 +31,5 @@ The site uses Bootstrap 5.3 with the Bootswatch Lumen theme, loaded from cdn.jsd
 
 - Build first (`docker/run.sh make test-build`), then run `docker/test.sh`. It runs the tests in the official Playwright Docker image (the Jekyll image has no npm or browsers) against `_site/`, served with `python3 -m http.server`. Extra arguments pass through, e.g. `docker/test.sh specs/tabs.spec.js`.
 - `docker/test.sh --update-snapshots` regenerates the visual baselines in `tests/specs/__screenshots__/`; only do this deliberately (baselines should be recorded on the current Bootstrap version). Baselines are rendered in the container, so don't generate them on the host.
+- Tests run in Chromium, Firefox and WebKit (`--project=firefox` runs one). Visual baselines are Chromium only: tests tagged `@visual` are skipped in the other engines.
 - Tests assert on behavior, not Bootstrap class names. `@playwright/test` in `tests/package.json` must match the image tag in `docker/test.sh`.

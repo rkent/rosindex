@@ -18,6 +18,13 @@ module.exports = defineConfig({
     url: `http://127.0.0.1:${port}/`,
     reuseExistingServer: true,
   },
+  // Behavior tests run in all three engines. Visual baselines (tagged @visual)
+  // are recorded in Chromium only, since font rendering differs per engine.
+  projects: [
+    { name: 'chromium', use: { browserName: 'chromium' } },
+    { name: 'firefox', use: { browserName: 'firefox' }, grepInvert: /@visual/ },
+    { name: 'webkit', use: { browserName: 'webkit' }, grepInvert: /@visual/ },
+  ],
   expect: {
     toHaveScreenshot: { maxDiffPixelRatio: 0.01 },
   },
