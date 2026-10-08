@@ -14,7 +14,8 @@ module.exports = defineConfig({
     viewport: { width: 1280, height: 900 },
   },
   webServer: {
-    command: `python3 -m http.server ${port} --bind 127.0.0.1 --directory ../_site`,
+    // The server logs every request to stderr; keep that out of the test output.
+    command: `mkdir -p test-results && python3 -m http.server ${port} --bind 127.0.0.1 --directory ../_site 2> test-results/http-server.log`,
     url: `http://127.0.0.1:${port}/`,
     reuseExistingServer: true,
   },

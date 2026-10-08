@@ -217,7 +217,8 @@ docker/test.sh --update-snapshots     # re-record the visual baselines
 Only update the snapshots when the page is meant to look different; the
 baselines in `tests/specs/__screenshots__/` must be recorded in the
 container. When a visual test fails, the expected, actual and diff images
-are written to `tests/test-results/`.
+are written to `tests/test-results/`, along with the web server's request
+log (`http-server.log`).
 
 ## Deployment
 
