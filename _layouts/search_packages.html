@@ -287,6 +287,7 @@ layout: default
         }, sorterParams:['ros_core', 'ros_base', 'desktop', 'desktop_full']},
       { title:STAR, field:"stars", width:40, sorter:"number", headerTooltip:"Repo stars", formatter:function(cell, formatterParams, onRendered) {
         const value = cell.getValue();
+        if (value === null || value === '') return '';
         return value >= 10000 ? Math.floor(value / 1000).toString() + "K" : value.toString();
       }},
       { title:"Authors", field:"authors", width:120},

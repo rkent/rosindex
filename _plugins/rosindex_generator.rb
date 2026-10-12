@@ -32,7 +32,6 @@ require_relative '../_ruby_libs/discovery'
 
 $fetched_uris = {}
 $debug = false
-$repo_scrape = {}
 DEFAULT_LANGUAGE_PREFIX = 'en'
 HEAVY_CHECKMARK = "\u2714"
 HEAVY_MINUS = "\u2796"
@@ -533,6 +532,27 @@ class Indexer < Jekyll::Generator
     return packages
   end
 
+  # get the github info (stars, description, topics) for a repo from the github scrape file
+  def github_repo_info(site, uri)
+    if @github_scrape.nil?
+      @github_scrape = {}
+      scrape_filename = site.config['github_scrape_filename']
+      if File.exist?(scrape_filename)
+        puts ("Loading github scrape results from #{scrape_filename}").green
+        scrape_results = File.open(scrape_filename, 'r') { |f| JSON.load(f) }
+        scrape_results.each do |scrape_uri, repo_info|
+          @github_scrape[scrape_uri] = repo_info
+          # repo objects use the cleaned up uri
+          clean_uri = cleanup_uri(scrape_uri) rescue nil
+          if clean_uri then @github_scrape[clean_uri] = repo_info end
+        end
+      else
+        puts ("WARNING: #{scrape_filename} does not exist, run 'make github-scrape' to get github stars, descriptions, and tags").yellow
+      end
+    end
+    return @github_scrape.fetch(uri, {})
+  end
+
   # scrape a version of a repository for packages and their contents
   def scrape_version(site, repo, distro, snapshot, vcs)
 
@@ -542,7 +562,7 @@ class Indexer < Jekyll::Generator
     end
 
     # initialize this snapshot data
-    repo_page = scrape_repo_page(repo.uri)
+    repo_page = github_repo_info(site, repo.uri)
     data = snapshot.data = {
       # get the uri for resolving raw links (for imgages, etc)
       'raw_uri' => get_raw_uri(repo.uri, repo.type, snapshot.version),
@@ -553,9 +573,9 @@ class Indexer < Jekyll::Generator
       'readme_rendered' => nil,
       'contributing' => nil,
       'contributing_rendered' => nil,
-      'stars' => repo_page.fetch(:stars, ''),
-      'description' => repo_page.fetch(:description, ''),
-      'tags' => repo_page.fetch(:tags, []),
+      'stars' => repo_page.fetch('stars', ''),
+      'description' => repo_page.fetch('description', ''),
+      'tags' => repo_page.fetch('tags', []),
     }
 
     # load the repo readme for this branch if it exists
@@ -588,14 +608,8 @@ class Indexer < Jekyll::Generator
       # store this package in the repo snapshot
       snapshot.packages[package_name] = package
 
-      # collect tags from discovered packages
-      repo.tags = Set.new(repo.tags).merge(package_data['tags'])
-
       # add any tags placed on a repo
-      repo.tags = repo.tags.merge(data['tags']).to_a
-
-      # collect wiki data
-      package.data['wiki'] = @wiki_data[package_name]
+      repo.tags = Set.new(repo.tags).merge(data['tags']).to_a
 
       # add this package to the global package dict
       @package_names[package_name].instances[repo.id] = repo
@@ -898,9 +912,7 @@ class Indexer < Jekyll::Generator
       puts ("creating repo objects for rosdistro: "+distro).green
       repo_list.each do |repo_item|
         # limit repos if requested
-        unless (site.config['repo_name_whitelist'].length == 0 or site.config['repo_name_whitelist'].include?(repo_item['name'])) then next end
-        if not site.config['repo_name_always'].include?(repo_item['name']) and \
-          not @repo_names.has_key?(repo_item['name']) and site.config['max_repos'] > 0 and @repo_names.length > site.config['max_repos'] then next end
+        unless repo_selected?(site.config, repo_item['name'], @repo_names) then next end
 
         begin
           repo = Repo.new(

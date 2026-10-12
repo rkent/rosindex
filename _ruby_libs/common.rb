@@ -17,6 +17,15 @@ def dputs(s)
   end
 end
 
+def repo_selected?(config, repo_name, selected_names)
+  # Should a discovered repo be used, given the configured limits on repos?
+  # selected_names is a hash keyed by the names of the repos selected so far.
+  unless (config['repo_name_whitelist'].length == 0 or config['repo_name_whitelist'].include?(repo_name)) then return false end
+  if not config['repo_name_always'].include?(repo_name) and \
+    not selected_names.has_key?(repo_name) and config['max_repos'] > 0 and selected_names.length > config['max_repos'] then return false end
+  return true
+end
+
 def cleanup_uri(uri)
   if uri.nil? then return uri end
 
