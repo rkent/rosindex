@@ -19,4 +19,5 @@ fi
 docker run \
   -w /home/`whoami`/rosindex \
   -v $SCRIPT_DIR/..:/home/`whoami`/rosindex:rw \
+  -e GITHUB_TOKEN \
   --net=host $INTERACTIVE rosindex/rosindex "${COMMAND[@]}"
