@@ -24,8 +24,16 @@ GITHUB_ENV_FILE = File.expand_path('../.env', __dir__)
 # Matches https, git, and ssh style github repo uris, capturing owner and repo name
 GITHUB_REPO_REGEX = %r{\A(?:https?://|git://|ssh://git@|git@)(?:www\.)?github\.com[:/]([^/]+)/([^/]+?)(?:\.git)?/?\z}
 
+# scrape results keyed by repo uri, as saved to the scrape file
 $repo_scrape = {}
+# scrape results (or the IndexException on failure) keyed by lowercase
+# owner/name, so each github repo is only fetched once however its uri is spelled
+$repo_scrape_by_name = {}
 $github_http = nil
+# github api usage, for reporting
+$github_api_calls = 0
+$github_rate_limit = nil
+$github_rate_remaining = nil
 
 def github_token()
   # get the github api token from the .env file, or else from the environment.
@@ -76,6 +84,11 @@ def fetch_github_api(path, limit = 10)
     $github_http = nil
     raise
   end
+  $github_api_calls += 1
+  if response['x-ratelimit-remaining'] then
+    $github_rate_remaining = response['x-ratelimit-remaining'].to_i
+    $github_rate_limit = response['x-ratelimit-limit'].to_i
+  end
 
   case response
   when Net::HTTPSuccess
@@ -97,26 +110,34 @@ end
 
 def scrape_repo_page(uri_s)
   # Uses the github api to get various items for a github repository
-  begin
-    # cache the results since this only depends on the repo uri
-    if $repo_scrape.key?(uri_s) then
-      return $repo_scrape[uri_s]
-    end
+  # cache the results since this only depends on the repo uri
+  if $repo_scrape.key?(uri_s) then
+    return $repo_scrape[uri_s]
+  end
 
-    match = GITHUB_REPO_REGEX.match(uri_s.to_s.strip)
-    if match then
-      repo = fetch_github_api("/repos/#{match[1]}/#{match[2]}")
-      repo_parms = {
-        stars: repo['stargazers_count'],
-        description: (repo['description'] || '').strip,
-        tags: repo['topics'] || [],
-      }
-    else
-      repo_parms = {}
+  match = GITHUB_REPO_REGEX.match(uri_s.to_s.strip)
+  if match then
+    name_key = "#{match[1]}/#{match[2]}".downcase
+    if not $repo_scrape_by_name.key?(name_key) then
+      begin
+        repo = fetch_github_api("/repos/#{match[1]}/#{match[2]}")
+        $repo_scrape_by_name[name_key] = {
+          stars: repo['stargazers_count'],
+          description: (repo['description'] || '').strip,
+          tags: repo['topics'] || [],
+        }
+      rescue StandardError => e
+        # cache failures too, so a failing repo is not retried
+        $repo_scrape_by_name[name_key] =
+          IndexException.new("Github scrape error. repo_uri: #{uri_s} error: #{e.message}")
+      end
     end
-
-  rescue StandardError => e
-    raise IndexException.new("Github scrape error. repo_uri: #{uri_s} error: #{e.message}")
+    repo_parms = $repo_scrape_by_name[name_key]
+    if repo_parms.is_a?(IndexException) then
+      raise repo_parms
+    end
+  else
+    repo_parms = {}
   end
 
   $repo_scrape[uri_s] = repo_parms
@@ -163,6 +184,7 @@ if __FILE__ == $0
 
   # Scrape repos
   selected_names = {}
+  attempted_uris = {}
   scrape_count = 0
   catch(:max_repos_reached) do
     repos.each do |distro, repo_list|
@@ -171,7 +193,8 @@ if __FILE__ == $0
         repo_name = repo_item['name']
         unless repo_selected?(config, repo_name, selected_names) then next end
         selected_names[repo_name] = true
-        if not $repo_scrape.key?(uri)
+        if not attempted_uris.key?(uri)
+          attempted_uris[uri] = true
           if params[:max_repos] > 0 and scrape_count >= params[:max_repos]
             throw :max_repos_reached
           end
@@ -190,4 +213,9 @@ if __FILE__ == $0
   # Save the results
   File.open(output_path, 'w') { |file| file.write(JSON.pretty_generate($repo_scrape)) }
   File.open(params[:error_path], 'w') { |file| file.write(JSON.pretty_generate(errors)) }
+
+  puts ("Made #{$github_api_calls} github api calls").green
+  if $github_rate_remaining then
+    puts ("Github api rate limit: #{$github_rate_remaining} of #{$github_rate_limit} calls remaining").green
+  end
 end
