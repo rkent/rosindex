@@ -25,7 +25,7 @@ DEBIAN_SCRIPT := _scripts/debian_descriptions.rb
 DISCOVERY_SCRIPT = _ruby_libs/discovery.rb
 DISCOVERY_RESULTS = _artifacts/discovery.json
 DISCOVERY_ERRORS = _artifacts/discovery_errors.json
-GITHUB_SCRAPE_SCRIPT = _ruby_libs/github_scrape.rb
+GITHUB_SCRAPE_SCRIPT = _scripts/github_scrape.py
 GITHUB_SCRAPE_ERRORS = _artifacts/github_scrape_errors.json
 github_scrape_args ?=
 
@@ -53,11 +53,11 @@ discover: prepare-sources
 
 github-scrape:
 	@echo "Rebuild github scrape file from discovered repos"
-	bundle exec $(GITHUB_SCRAPE_SCRIPT) --config=$(config_file),$(index_file) --input_path=$(DISCOVERY_RESULTS) --error_path=$(GITHUB_SCRAPE_ERRORS) $(github_scrape_args)
+	python3 $(GITHUB_SCRAPE_SCRIPT) --config=$(config_file),$(index_file) --input_path=$(DISCOVERY_RESULTS) --error_path=$(GITHUB_SCRAPE_ERRORS) $(github_scrape_args)
 
 test-github-scrape:
 	@echo "Rebuild github scrape file for only the repos used by test-build"
-	bundle exec $(GITHUB_SCRAPE_SCRIPT) --config=$(config_file),$(index_file),$(devel_config_file) --input_path=$(DISCOVERY_RESULTS) --error_path=$(GITHUB_SCRAPE_ERRORS) $(github_scrape_args)
+	python3 $(GITHUB_SCRAPE_SCRIPT) --config=$(config_file),$(index_file),$(devel_config_file) --input_path=$(DISCOVERY_RESULTS) --error_path=$(GITHUB_SCRAPE_ERRORS) $(github_scrape_args)
 
 build: rebuild-dep-descriptions discover github-scrape prepare-sources
 	bundle exec jekyll build --verbose --trace -d $(site_path) --config=$(config_file),$(index_file)
