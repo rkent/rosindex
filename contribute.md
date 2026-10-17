@@ -10,6 +10,10 @@ There are numerous ways to contribute to ROS Index, either by adding packages,
 contributing documentation to existing packages, or adding more analytics to
 the website itself.
 
+To contribute to ROS packages themselves, the [**Contribute list**]({{ "/search_contribute/" | prepend: site.baseurl }})
+shows open pull requests, and issues labeled "help wanted" or "good first issue", across
+the GitHub repositories in ROS Index.
+
 {% toc 2 %}
 
 ## Adding ROS Packages

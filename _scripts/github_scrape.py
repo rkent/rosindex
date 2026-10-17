@@ -31,7 +31,9 @@ The results file is a dictionary keyed by repo uri, like:
     "open_issues": 6,
     "help_wanted": {"total": 0, "items": []},
     "good_first_issue": {"total": 0, "items": []},
-    "pull_requests": {"total": 1, "items": [{"number": 12, "title": "...", "html_url": "..."}]}
+    "pull_requests": {"total": 1, "items": [{"number": 12, "title": "...", "html_url": "...",
+                                              "created_at": "2026-01-02", "updated_at": "2026-02-03",
+                                              "author": "someone", "draft": false}]}
   },
   ...
 }
@@ -65,17 +67,19 @@ LIST_SIZE = 100
 REQUEST_TIMEOUT = 60
 
 # Fields to get for each repo. The contribution suggestion lists match those
-# shown by js/contribution_suggestions.js
-LIST_FIELDS = 'totalCount nodes { number title url }'
+# shown by js/contribution_suggestions.js, plus dates and author for the contribute list.
+# isDraft only exists on pull requests.
+ISSUE_LIST_FIELDS = 'totalCount nodes { number title url createdAt updatedAt author { login } }'
+PR_LIST_FIELDS = 'totalCount nodes { number title url createdAt updatedAt author { login } isDraft }'
 LIST_ORDER = 'orderBy: {field: CREATED_AT, direction: DESC}'
 REPO_FIELDS = f'''
   stargazerCount
   description
   repositoryTopics(first: 20) {{ nodes {{ topic {{ name }} }} }}
   openIssues: issues(states: OPEN) {{ totalCount }}
-  helpWanted: issues(states: OPEN, labels: ["help wanted"], first: {LIST_SIZE}, {LIST_ORDER}) {{ {LIST_FIELDS} }}
-  goodFirstIssue: issues(states: OPEN, labels: ["good first issue"], first: {LIST_SIZE}, {LIST_ORDER}) {{ {LIST_FIELDS} }}
-  pullRequests(states: OPEN, first: {LIST_SIZE}, {LIST_ORDER}) {{ {LIST_FIELDS} }}
+  helpWanted: issues(states: OPEN, labels: ["help wanted"], first: {LIST_SIZE}, {LIST_ORDER}) {{ {ISSUE_LIST_FIELDS} }}
+  goodFirstIssue: issues(states: OPEN, labels: ["good first issue"], first: {LIST_SIZE}, {LIST_ORDER}) {{ {ISSUE_LIST_FIELDS} }}
+  pullRequests(states: OPEN, first: {LIST_SIZE}, {LIST_ORDER}) {{ {PR_LIST_FIELDS} }}
 '''
 
 
@@ -142,11 +146,25 @@ def contribution_list(connection):
     # Convert a graphql issue or pull request connection into a list for the scrape file
     return {
         'total': connection['totalCount'],
-        'items': [
-            {'number': node['number'], 'title': node['title'], 'html_url': node['url']}
-            for node in connection['nodes']
-        ],
+        'items': [contribution_item(node) for node in connection['nodes']],
     }
+
+
+def contribution_item(node):
+    # Convert a graphql issue or pull request node into an item for the scrape file
+    item = {
+        'number': node['number'],
+        'title': node['title'],
+        'html_url': node['url'],
+        # dates as YYYY-MM-DD
+        'created_at': (node.get('createdAt') or '')[:10],
+        'updated_at': (node.get('updatedAt') or '')[:10],
+        # author is null for deleted accounts
+        'author': (node.get('author') or {}).get('login', ''),
+    }
+    if 'isDraft' in node:
+        item['draft'] = node['isDraft']
+    return item
 
 
 class GithubScraper:

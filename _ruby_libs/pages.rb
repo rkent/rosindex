@@ -113,6 +113,19 @@ class SearchDepsListPage < Jekyll::Page
   end
 end
 
+class SearchContributeListPage < Jekyll::Page
+  def initialize(site)
+    @site = site
+    @base = site.source
+    @dir = 'search_contribute/'
+    @name = 'index.html'
+
+    self.process(@name)
+    self.read_yaml(File.join(@base, '_layouts'),'search_contribute.html')
+    self.data['title'] = 'Contribute'
+  end
+end
+
 
 class PackagePage < Jekyll::Page
   def initialize(site, package_instances)

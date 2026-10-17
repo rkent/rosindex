@@ -756,6 +756,58 @@ class Indexer < Jekyll::Generator
     site.pages << SearchDepsListPage.new(site)
   end
 
+  def generate_search_contribute_list(site)
+    site.pages << SearchContributeListPage.new(site)
+  end
+
+  # Build the contribute list rows (open pull requests, help wanted and good first
+  # issue items) from the github scrape, one row per github issue or pull request.
+  def get_contribute_index(site)
+    rows = {}
+    seen_uris = Set.new
+    @all_repos.each do |instance_id, repo|
+      next if repo.uri.nil?
+      clean_uri = cleanup_uri(repo.uri) rescue repo.uri
+      next if seen_uris.include?(clean_uri)
+      seen_uris << clean_uri
+
+      info = github_repo_info(site, repo.uri)
+      next if info.empty?
+
+      org = URI(repo.uri).path.split('/')[1] rescue ''
+      tags = (repo.name.split('_') + (info['tags'] || [])).uniq * " "
+
+      ['pull_requests', 'help_wanted', 'good_first_issue'].each do |type|
+        (info.dig(type, 'items') || []).each do |item|
+          url = item['html_url']
+          # an issue can be both help wanted and a good first issue
+          if rows.key?(url)
+            rows[url]['type'] << ' ' << type
+            next
+          end
+          rows[url] = {
+            'id' => rows.length,
+            'type' => type.dup,
+            'number' => item['number'],
+            'title' => item['title'],
+            'html_url' => url,
+            'repo' => repo.name,
+            'org' => org,
+            'stars' => info['stars'],
+            'repo_description' => info['description'] || '',
+            'tags' => tags,
+            'author' => item['author'] || '',
+            'created_at' => item['created_at'] || '',
+            'updated_at' => item['updated_at'] || '',
+            'draft' => item['draft'] || false,
+            'score' => 0.0,
+          }
+        end
+      end
+    end
+    return rows.values
+  end
+
   def write_release_manifests(site, repo, package_name, default)
     $all_distros.each do |distro|
       unless repo.release_manifests[distro].nil?
@@ -1119,6 +1171,11 @@ class Indexer < Jekyll::Generator
 
     generate_search_deps_list(site)
 
+    # create contribute list page
+    puts ("Generating contribute list page...").blue
+
+    generate_search_contribute_list(site)
+
     # create rosdep pages
     puts ("Generating rosdep pages...").blue
 
@@ -1343,6 +1400,15 @@ class Indexer < Jekyll::Generator
       site.static_files.push(*precompile_lunr_index(
         site, slices, reference_field, indexed_fields,
         "search/deps/", slices.keys
+      ).to_a)
+
+      puts ("Generating contribute search index...").blue
+      contribute_index = get_contribute_index(site)
+      puts ("Found #{contribute_index.length} contribute items.").green
+      indexed_fields = ['title:100', 'repo:50', 'tags:50', 'org', 'author', 'repo_description', 'type']
+      site.static_files.push(*precompile_lunr_index(
+        site, {'0' => contribute_index}, reference_field, indexed_fields,
+        "search/contribute/", ['0']
       ).to_a)
     end
 

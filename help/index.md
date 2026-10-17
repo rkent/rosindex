@@ -11,4 +11,5 @@ Current help pages:
 
 - [**Package List**](/help/package_list) Package list and search. 
 - [**System Dependencies**](/help/system_dependencies) System Dependencies list.
+- [**Contribute**](/help/contribute_list) List of open pull requests and issues looking for contributors.
 - [**Tutorial**](/help/tutorial) A brief introduction to package search with `ROS index`.

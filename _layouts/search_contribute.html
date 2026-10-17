@@ -1,0 +1,376 @@
+---
+layout: default
+no_scroll: true
+---
+<div class="container-fluid" style="margin-top:20px; height:100%;">
+  <div class="container-fluid" style="height:100%;">
+    <div class="row" style="height:var(--breadcrumb-height);">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{site.baseurl}}/">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Contribute</li>
+      </ol>
+    </div>
+
+    <div class="row" style="height:var(--distro-height);">
+      <div class="col-12" id="contribute-filters">
+        <input type="checkbox" class="btn-check type-filter" id="type-pull_requests" data-type="pull_requests" autocomplete="off" checked>
+        <label class="btn btn-sm btn-outline-primary" for="type-pull_requests">Pull requests</label>
+        <input type="checkbox" class="btn-check type-filter" id="type-help_wanted" data-type="help_wanted" autocomplete="off" checked>
+        <label class="btn btn-sm btn-outline-success" for="type-help_wanted">Help wanted</label>
+        <input type="checkbox" class="btn-check type-filter" id="type-good_first_issue" data-type="good_first_issue" autocomplete="off" checked>
+        <label class="btn btn-sm btn-outline-info" for="type-good_first_issue">Good first issue</label>
+        <span class="form-check form-check-inline ms-3">
+          <input class="form-check-input" type="checkbox" id="hide-drafts">
+          <label class="form-check-label" for="hide-drafts">Hide draft PRs</label>
+        </span>
+      </div>
+    </div>
+
+    <div class="row" style="height:var(--search-height);">
+      <div class="card" style="height:100%;">
+        <div class="card-header" style="height:100%;">
+          <div class="row" style="height:100%;">
+            <div class="col-6">
+              <div class="input-group">
+                <input id="search-query" type="text" class="form-control"
+                        autocomplete="off" placeholder="Search contributions">
+                <button id="search-button" title="Search contributions" class="btn btn-light">
+                  <span class="bi bi-search"></span>
+                </button>
+                <span class="input-group-text">
+                  <input type="checkbox" id="search-enable-box"/>
+                  <span class="d-none d-md-inline"> Enable search </span>
+                </span>
+              </div>
+            </div>
+            <div class="col-4">
+              <p style="line-height:35px">
+                <span class="d-none d-md-inline">Showing </span>
+                <span id="table-filtered-count">0</span> of
+                <span id="table-unfiltered-count">0</span>
+                <span class="d-none d-md-inline"> items</span>
+              </p>
+            </div>
+            <div class="col-2 text-end">
+              <p style="line-height:35px">
+                <a href="{{site.baseurl}}/help/contribute_list/">
+                  <span class="bi bi-question-circle"></span>
+                  <span class="d-none d-md-inline"> Help</span>
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row tab-table" style="height:calc(var(--content-height) - var(--distro-height) - var(--search-height) - var(--breadcrumb-height) - var(--table-margins))">
+      <div id="contribute-table"></div>
+    </div>
+  </div>
+</div>
+
+<!-- See https://github.com/olifolkerd/tabulator/issues/4419 for issue with Tabulator post-5.6.0 -->
+<link href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/css/tabulator.min.css" rel="stylesheet">
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/luxon@3.5.0/build/global/luxon.min.js"></script>
+<script src="{{ site.baseurl }}/js/lunr.js" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript">
+  var gData_promise = null;
+  var gIndex_promise = null;
+  var gTable = null;
+  const DEFAULT_SORT = [{column:"updated_at", dir:"desc"}];
+  const SCORE_SORT = [{column:"score", dir:"desc"}];
+  const ALL_TYPES = ['pull_requests', 'help_wanted', 'good_first_issue'];
+  const TYPE_BADGES = {
+    pull_requests: {label: 'PR', style: 'text-bg-primary'},
+    help_wanted: {label: 'Help wanted', style: 'text-bg-success'},
+    good_first_issue: {label: 'Good first issue', style: 'text-bg-info'},
+  };
+
+  function addFilter(table, field, type, value) {
+    // Add a new table filter, removing existing
+    removeFilterByField(table, field);
+    table.addFilter(field, type, value);
+  }
+
+  function removeFilterByField(table, field) {
+    // remove all filters on a specified field, if any
+    for (const existingFilter of table.getFilters()) {
+      if ('field' in existingFilter && existingFilter['field'] == field) {
+        table.removeFilter(existingFilter.field, existingFilter.type, existingFilter.value);
+      }
+    }
+  }
+
+  function getData() {
+    // start and return a promise to get json data
+    if (gData_promise) {
+      return gData_promise;
+    }
+    gData_promise =
+      fetch(`{{ site.baseurl }}/search/contribute/data.0.json?v={{ site.time | date: '%s' }}`)
+        .then((response) => response.json());
+
+    return gData_promise;
+  }
+
+  function getIndex() {
+    // start and return a promise to get json index
+    if (gIndex_promise) {
+      return gIndex_promise;
+    }
+    gIndex_promise =
+      fetch(`{{ site.baseurl }}/search/contribute/index.0.json?v={{ site.time | date: '%s' }}`)
+        .then((response) => response.json())
+        .then((indexData) => {
+          return lunr.Index.load(indexData);
+        });
+
+    return gIndex_promise;
+  }
+
+  function getWindowSearchQuery() {
+    return new URL(window.location.toString()).searchParams.get('contribute');
+  }
+
+  // Populate the search input with querystring parameter
+  function setWindowSearchQuery(query) {
+    var url = new URL(window.location.toString());
+    url.searchParams.set('contribute', query);
+    window.history.pushState({}, '', url);
+  }
+
+  function copySearchQueryToUI() {
+    var query = getWindowSearchQuery() || '';
+    $('#search-query').val(query);
+    $("#search-enable-box").prop("checked", !!query);
+  }
+
+  function copyUIToSearchQuery() {
+    if ($("#search-enable-box").prop("checked")) {
+      setWindowSearchQuery($('#search-query').val());
+    } else {
+      setWindowSearchQuery('');
+    }
+  }
+
+  function copyTypeFiltersToUI() {
+    // Set the type and draft checkboxes from the querystring (all types shown by default).
+    var params = new URL(window.location.toString()).searchParams;
+    var types = params.has('types') ? params.get('types').split(',') : ALL_TYPES;
+    for (const type of ALL_TYPES) {
+      $(`#type-${type}`).prop('checked', types.includes(type));
+    }
+    $('#hide-drafts').prop('checked', params.get('drafts') == 'hide');
+  }
+
+  function copyTypeFiltersToQuery() {
+    var url = new URL(window.location.toString());
+    var types = getEnabledTypes();
+    if (types.length == ALL_TYPES.length) {
+      url.searchParams.delete('types');
+    } else {
+      url.searchParams.set('types', types.join(','));
+    }
+    if ($('#hide-drafts').prop('checked')) {
+      url.searchParams.set('drafts', 'hide');
+    } else {
+      url.searchParams.delete('drafts');
+    }
+    window.history.replaceState({}, '', url);
+  }
+
+  function getEnabledTypes() {
+    return ALL_TYPES.filter(type => $(`#type-${type}`).prop('checked'));
+  }
+
+  function typeFilter(data) {
+    // Show a row if any of its types is enabled, hiding drafts if requested.
+    if (data.draft && $('#hide-drafts').prop('checked')) {
+      return false;
+    }
+    var enabled = getEnabledTypes();
+    return data.type.split(' ').some(type => enabled.includes(type));
+  }
+
+  // Returns a promise resolving to a hash of {ref: score} with hits
+  function getSearchHash(query) {
+    if (!query) {
+      return Promise.resolve(null);
+    }
+    return getIndex().then(searchIndex => {
+      var searchResults = searchIndex.search(query);
+      // Tabulator filters don't seem to work with zero entries
+      searchHash = {'-1': 0.0};
+      for (const result of searchResults) {
+        searchHash[result.ref] = result.score;
+      }
+      console.log(`Search returned ${searchResults.length} results`);
+      return searchHash;
+    });
+  }
+
+  function doSearch(table, query) {
+    console.log(`doSearch query="${query}"`);
+    getData().then(data => {
+      getSearchHash(query).then(searchHash => {
+        // Add score to table data
+        for (const dataValue of data) {
+          ref = dataValue['id'].toString();
+          if (searchHash && ref in searchHash) {
+            dataValue['score'] = searchHash[ref];
+          }
+          else {
+            dataValue['score'] = 0.0;
+          }
+        }
+        table.updateData(data);
+        if (searchHash) {
+          keysArray = Object.keys(searchHash).map((key) => parseInt(key));
+          addFilter(table, 'id', 'in', keysArray);
+          table.setSort(SCORE_SORT);
+        }
+        else {
+          removeFilterByField(table, 'id');
+          table.setSort(DEFAULT_SORT);
+        }
+      })
+    })
+  }
+
+  function typeFormatter(cell) {
+    // Show a badge for each type of the item.
+    var data = cell.getRow().getData();
+    return data.type.split(' ').map(type => {
+      var badge = TYPE_BADGES[type];
+      var label = (type == 'pull_requests' && data.draft) ? 'Draft PR' : badge.label;
+      var style = (type == 'pull_requests' && data.draft) ? 'text-bg-secondary' : badge.style;
+      return `<span class="badge ${style}">${label}</span>`;
+    }).join(' ');
+  }
+
+  function makeTable(data, searchArray) {
+    const STAR = "★";
+    var initialFilter = (searchArray === undefined || searchArray === null || searchArray.length == 0) ?
+      [] : [{field: 'id', type: 'in', value: searchArray}];
+
+    columns = [ // Define Table Columns
+      { title:"Type", field:"type", width:120, formatter:typeFormatter, tooltip:false},
+      { title:"#", field:"number", width:70, hozAlign:"right", sorter:"number",
+        formatter:"link", formatterParams:{urlField:"html_url", target:"_blank"}},
+      { title:"Title", field:"title", minWidth:300,
+        formatter:"link", formatterParams:{urlField:"html_url", target:"_blank"}},
+      { title:"Repo", field:"repo", width:150,
+        formatter:"link", formatterParams:{url:(cell) => `{{site.baseurl}}/r/${cell.getValue()}/`}},
+      { title:"Org", field:"org", width:120},
+      { title:STAR, field:"stars", width:50, sorter:"number", headerTooltip:"Repo stars", formatter:function(cell) {
+        const value = cell.getValue();
+        if (value === null || value === undefined || value === '') return '';
+        return value >= 10000 ? Math.floor(value / 1000).toString() + "K" : value.toString();
+      }},
+      { title:"Author", field:"author", width:120},
+      { title:"Created", field:"created_at", width:100, sorter:"date", sorterParams:{format:"yyyy-MM-dd"}},
+      { title:"Updated", field:"updated_at", width:100, sorter:"date", sorterParams:{format:"yyyy-MM-dd"}},
+      { title:"score", field:"score", sorter:"number", visible:false},
+    ];
+
+    const table = new Tabulator("#contribute-table", {
+      columnDefaults:{ tooltip:true },
+      maxHeight:"100%",
+      data:data, //assign data to table
+      layout:"fitColumns", //fit columns to width of table (optional)
+      rowHeight:30, // Workaround for https://github.com/olifolkerd/tabulator/issues/4419
+      initialFilter: initialFilter,
+      initialSort: initialFilter.length ? SCORE_SORT : DEFAULT_SORT,
+      columns: columns,
+    });
+    table.on("tableBuilt", () => {
+      table.addFilter(typeFilter);
+    });
+    return table;
+  }
+
+  // Returns a promise that resolves to a Tabulator table
+  function showTable(query) {
+    console.log(`showTable query: ${query}`);
+    var searchPromise = query ? getSearchHash(query) : Promise.resolve(null);
+    return Promise.all([getData(), searchPromise]).then(values => {
+      var data = values[0];
+      var searchHash = values[1];
+      if (searchHash) {
+        for (const dataValue of data) {
+          dataValue['score'] = searchHash[dataValue['id'].toString()] || 0.0;
+        }
+      }
+      searchArray = searchHash ? Object.keys(searchHash).map(ref => parseInt(ref)) : [];
+      const table = makeTable(data, searchArray);
+      $("#table-filtered-count").text(data.length);
+      $("#table-unfiltered-count").text(data.length);
+      table.on("dataFiltered", (filters, rows) => {
+        $("#table-filtered-count").text(rows.length);
+        $("#table-unfiltered-count").text(table.getDataCount());
+      });
+      table.on("tableBuilt", () => {
+        $("#table-filtered-count").text(table.getDataCount('active'));
+        $("#table-unfiltered-count").text(table.getDataCount());
+      });
+      return table;
+    });
+  }
+
+  $(function() {
+    console.log('document ready');
+    copySearchQueryToUI();
+    copyTypeFiltersToUI();
+    var query = getWindowSearchQuery();
+    showTable(query)
+    .then(table => gTable = table);
+
+    $('.type-filter, #hide-drafts').on('change', (e) => {
+      copyTypeFiltersToQuery();
+      if (gTable) {
+        gTable.refreshFilter();
+      }
+    });
+
+    $('#search-query').on('focus', (e) => {
+      // Pre-load index to speed up search response
+      getIndex();
+    });
+
+    $('#search-query').bind('keypress', (e) => {
+      if (e.which == 13) {
+        $("#search-enable-box").prop("checked", true);
+        copyUIToSearchQuery();
+        var query = getWindowSearchQuery() || '';
+        doSearch(gTable, query);
+      }
+    });
+
+    $("#search-enable-box").on('click', (e) => {
+      element = e.currentTarget;
+      console.log(`#search-enable click ${element.checked}`);
+      query = $("#search-query").val();
+      if (element.checked && query) {
+        copyUIToSearchQuery();
+        doSearch(gTable, query);
+      } else {
+        setWindowSearchQuery('');
+        removeFilterByField(gTable, 'id');
+        if (gTable) {
+          gTable.setSort(DEFAULT_SORT);
+        }
+      }
+    });
+
+    $("#search-button").on('click', (e) => {
+      query = $("#search-query").val();
+      if (query) {
+        $("#search-enable-box").prop("checked", true);
+        copyUIToSearchQuery();
+        doSearch(gTable, query);
+      }
+    });
+
+  });
+</script>
