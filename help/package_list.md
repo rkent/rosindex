@@ -18,13 +18,14 @@ breadcrumbs: ['help']
 - Last commit date (📅): The last date a commit was made to the package's repository.
 - Package dependency count (⬅): How many packages this package depends on.
 - Package used by count(➡): How many packages use this package as a dependency.
+- Downloads (⬇): How often the package was downloaded from packages.ros.org over the last three months, scaled 0 - 99 within each distro. 0 means no recorded downloads.
 - Authors: Names listed in package.xml as authors.
 - Maintainers: Names listed in package.xml as maintainers.
 - Repo: Repository containing this package.
 - Org: Organization that is the parent of the package's repository.
 - Version: Package version from package.xml.
 
-Use the **Columns** menu above the table to choose which fields are shown. By default Released, Dependency count, Used-by count, Core, Version, Authors and Maintainers are hidden. Your choice is remembered in your browser. The Package List and the Repository List each keep their own choice.
+Use the **Columns** menu above the table to choose which fields are shown. By default Released, Dependency count, Used-by count, Core, Downloads, Version, Authors and Maintainers are hidden. Your choice is remembered in your browser. The Package List and the Repository List each keep their own choice.
 
 ## Searching
 

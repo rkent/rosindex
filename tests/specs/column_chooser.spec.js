@@ -19,6 +19,8 @@ test('Columns menu shows default columns and hides optional ones', async ({ page
   const menu = await openChooser(page);
   await expect(menu.getByRole('checkbox', { name: 'Description' })).toBeChecked();
   await expect(menu.getByRole('checkbox', { name: 'Org' })).toBeChecked();
+  await expect(menu.getByRole('checkbox', { name: 'Downloads' })).not.toBeChecked();
+  await expect(columnHeader(page, 'downloads')).toBeHidden();
   await expect(menu.getByRole('checkbox', { name: 'Version' })).not.toBeChecked();
   await expect(menu.getByRole('checkbox', { name: 'Core' })).not.toBeChecked();
   await expect(columnHeader(page, 'org')).toBeVisible();

@@ -20,6 +20,8 @@ search_config=_config/search_index.yml
 
 PIP_FILE := _artifacts/pip_packages.json
 PIP_SCRIPT := _scripts/pip_packages.py
+DOWNLOADS_FILE := _artifacts/package_downloads.json
+DOWNLOADS_SCRIPT := _scripts/package_downloads.py
 DEBIAN_FILE := _artifacts/debian_packages.json
 DEBIAN_SCRIPT := _scripts/debian_descriptions.rb
 DISCOVERY_SCRIPT = _ruby_libs/discovery.rb
@@ -30,6 +32,10 @@ $(PIP_FILE):
 	@echo "Get pip descriptions file"
 	python3 $(PIP_SCRIPT)
 
+$(DOWNLOADS_FILE):
+	@echo "Get package downloads file"
+	python3 $(DOWNLOADS_SCRIPT)
+
 $(DISCOVERY_RESULTS): prepare-sources
 	@echo "Rebuild discovery file that contains discovered repos"
 	bundle exec $(DISCOVERY_SCRIPT) --config=$(config_file),$(index_file) --path=$(DISCOVERY_RESULTS) --errors=$(DISCOVERY_ERRORS)
@@ -37,6 +43,8 @@ $(DISCOVERY_RESULTS): prepare-sources
 rebuild-dep-descriptions:
 	@echo "rebuild pip descriptions file"
 	python3 $(PIP_SCRIPT)
+	@echo "rebuild package downloads file"
+	python3 $(DOWNLOADS_SCRIPT)
 	@echo "rebuild debian descriptions file"
 	ruby $(DEBIAN_SCRIPT)
 
@@ -71,7 +79,7 @@ serve:
 serve-devel:
 	bundle exec jekyll serve --host 0.0.0.0 --no-watch --trace -d $(site_path) --config=$(config_file),$(index_file),$(devel_config_file) --skip-initial-build
 
-test-build: $(PIP_FILE) $(DEBIAN_FILE) $(DISCOVERY_RESULTS) prepare-sources
+test-build: $(PIP_FILE) $(DOWNLOADS_FILE) $(DEBIAN_FILE) $(DISCOVERY_RESULTS) prepare-sources
 	bundle exec jekyll build --verbose --trace -d $(site_path) --config=$(config_file),$(index_file),$(devel_config_file)
 
 clean-sources:

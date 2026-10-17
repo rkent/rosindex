@@ -138,6 +138,7 @@ layout: default
     {field:"pkg_deps", label:"⬅ Dependency count", defaultVisible:false},
     {field:"dependants", label:"➡ Used-by count", defaultVisible:false},
     {field:"core", label:"⊙ Core", defaultVisible:false},
+    {field:"downloads", label:"⬇ Downloads", defaultVisible:false},
     {field:"last_commit_time", label:"\u{1F4C5} Last commit", defaultVisible:true},
     {field:"version", label:"Version", defaultVisible:false},
     {field:"authors", label:"Authors", defaultVisible:false},
@@ -333,6 +334,7 @@ layout: default
     const STAR = "\u2605";
     const LEFT_ARROW = "\u2B05";
     const RIGHT_ARROW = "\u27A1";
+    const DOWN_ARROW = "\u2B07";
     const CIRCLED_DOT = "\u2299";
     const isRepos = getIsRepos();
 
@@ -369,6 +371,7 @@ layout: default
         hozAlign:"center", formatterParams: {allowTruthy: true}, sorter:function(a, b, aRow, bRow, column, dir, sorterParams) {
           return sorterParams.indexOf(a) - sorterParams.indexOf(b);
         }, sorterParams:['ros_core', 'ros_base', 'desktop', 'desktop_full']},
+      { title:DOWN_ARROW, field:"downloads", width:40, headerTooltip:"package download counts, scaled 0 - 99"},
       { title:"Authors", field:"authors", width:120},
       { title:"Maintainers", field:"maintainers", width:120},
       { title:"Org", field:"org", width:100},
