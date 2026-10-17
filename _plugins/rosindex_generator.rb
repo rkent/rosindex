@@ -8,6 +8,7 @@ require 'colorator'
 require 'fileutils'
 require 'find'
 require 'json'
+require 'nokogiri'
 require 'rexml/document'
 require 'rexml/xpath'
 require 'pathname'
@@ -532,6 +533,27 @@ class Indexer < Jekyll::Generator
     return packages
   end
 
+  # get the github info (stars, description, topics) for a repo from the github scrape file
+  def github_repo_info(site, uri)
+    if @github_scrape.nil?
+      @github_scrape = {}
+      scrape_filename = site.config['github_scrape_filename']
+      if File.exist?(scrape_filename)
+        puts ("Loading github scrape results from #{scrape_filename}").green
+        scrape_results = File.open(scrape_filename, 'r') { |f| JSON.load(f) }
+        scrape_results.each do |scrape_uri, repo_info|
+          @github_scrape[scrape_uri] = repo_info
+          # repo objects use the cleaned up uri
+          clean_uri = cleanup_uri(scrape_uri) rescue nil
+          if clean_uri then @github_scrape[clean_uri] = repo_info end
+        end
+      else
+        puts ("WARNING: #{scrape_filename} does not exist, run 'make github-scrape' to get github stars, descriptions, and tags").yellow
+      end
+    end
+    return @github_scrape.fetch(uri, {})
+  end
+
   # scrape a version of a repository for packages and their contents
   def scrape_version(site, repo, distro, snapshot, vcs)
 
@@ -541,6 +563,7 @@ class Indexer < Jekyll::Generator
     end
 
     # initialize this snapshot data
+    repo_page = github_repo_info(site, repo.uri)
     data = snapshot.data = {
       # get the uri for resolving raw links (for imgages, etc)
       'raw_uri' => get_raw_uri(repo.uri, repo.type, snapshot.version),
@@ -549,7 +572,12 @@ class Indexer < Jekyll::Generator
       'last_commit_time' => vcs.get_last_commit_time(),
       'readme' => nil,
       'readme_rendered' => nil,
-      'contributing_rendered' => nil}
+      'contributing' => nil,
+      'contributing_rendered' => nil,
+      'stars' => repo_page.fetch('stars', ''),
+      'description' => repo_page.fetch('description', ''),
+      'tags' => repo_page.fetch('tags', []),
+    }
 
     # load the repo readme for this branch if it exists
     data['readme_rendered'], data['readme'] = get_readme(
@@ -580,6 +608,9 @@ class Indexer < Jekyll::Generator
 
       # store this package in the repo snapshot
       snapshot.packages[package_name] = package
+
+      # add any tags placed on a repo
+      repo.tags = Set.new(repo.tags).merge(data['tags']).to_a
 
       # add this package to the global package dict
       @package_names[package_name].instances[repo.id] = repo
@@ -882,9 +913,7 @@ class Indexer < Jekyll::Generator
       puts ("creating repo objects for rosdistro: "+distro).green
       repo_list.each do |repo_item|
         # limit repos if requested
-        unless (site.config['repo_name_whitelist'].length == 0 or site.config['repo_name_whitelist'].include?(repo_item['name'])) then next end
-        if not site.config['repo_name_always'].include?(repo_item['name']) and \
-          not @repo_names.has_key?(repo_item['name']) and site.config['max_repos'] > 0 and @repo_names.length > site.config['max_repos'] then next end
+        unless repo_selected?(site.config, repo_item['name'], @repo_names) then next end
 
         begin
           repo = Repo.new(
@@ -1159,7 +1188,7 @@ class Indexer < Jekyll::Generator
               'baseurl' => site.config['baseurl'],
               'url' => File.join('/p',package_name)+"#"+distro,
               'last_commit_time' => repo_snapshot.data['last_commit_time'],
-              'tags' => (package_name.split('_')) * " ",
+              'tags' => (package_name.split('_') + (repo_snapshot.data['tags'] || [])).uniq * " ",
               'package' => package_name,
               'repo' => repo.name,
               'core' => core,
@@ -1173,7 +1202,9 @@ class Indexer < Jekyll::Generator
               'dependants' => p['dependants'].length,
               'readme' => readme_filtered,
               'org' => URI(repo.uri).path.split('/')[1],
-              'downloads' => packages_scaled[package_name] || 0
+              'downloads' => packages_scaled[package_name] || 0,
+              'stars' => repo_snapshot.data['stars'],
+              'repo_description': repo_snapshot.data['description'],
             }
 
             dputs 'indexed: ' << "#{package_name} #{instance_id} #{distro}"

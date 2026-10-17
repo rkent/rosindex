@@ -20,6 +20,8 @@ db_cache_filename: _cache/_deploy_cache.db
 report_filename: _cache/_deploy_index_report.yaml
 report_diff_filename: _cache/_deploy_index_report_diff.yaml
 debbuild_release_path: _cache/debbuild_releases
+# github repo info (stars, description, topics), written by _scripts/github_scrape.py
+github_scrape_filename: _artifacts/github_scrape.json
 
 # If true, this skips updating the known repos
 skip_update: false

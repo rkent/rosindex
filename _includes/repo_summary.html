@@ -4,6 +4,20 @@
 {% endcomment %}
   <table class="table table-sm">
     <tr>
+      <td class="text-end"><b>Description</b></td>
+      <td><span class="badge text-bg-secondary">{{snapshot.data.description}}</span></td>
+    </tr>
+    {% if snapshot.data.tags and snapshot.data.tags.size > 0 %}
+    <tr>
+      <td class="text-end"><b>Tags</b></td>
+      <td>
+        {% for tag in snapshot.data.tags %}
+          <a class="badge text-bg-info" href="{{site.baseurl}}/?search_packages=true&pkgs={{tag | url_encode}}#{{distro}}">{{tag}}</a>
+        {% endfor %}
+      </td>
+    </tr>
+    {% endif %}
+    <tr>
       <td style="width:100px;" class="text-end"><b>Checkout URI</b></td>
       <td><a class="badge text-bg-secondary" href="{{repo.uri}}">{{repo.uri}}</a></td>
     </tr>

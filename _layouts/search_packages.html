@@ -134,11 +134,12 @@ layout: default
   // Columns the user may show or hide. Package and Repo are always shown.
   const TOGGLEABLE_COLUMNS = [
     {field:"description", label:"Description", defaultVisible:true},
-    {field:"released", label:"★ Released", defaultVisible:false},
+    {field:"released", label:"⚡ Released", defaultVisible:false},
     {field:"pkg_deps", label:"⬅ Dependency count", defaultVisible:false},
     {field:"dependants", label:"➡ Used-by count", defaultVisible:false},
     {field:"core", label:"⊙ Core", defaultVisible:false},
     {field:"downloads", label:"⬇ Downloads", defaultVisible:false},
+    {field:"stars", label:"★ Stars", defaultVisible:false},
     {field:"last_commit_time", label:"\u{1F4C5} Last commit", defaultVisible:true},
     {field:"version", label:"Version", defaultVisible:false},
     {field:"authors", label:"Authors", defaultVisible:false},
@@ -336,6 +337,7 @@ layout: default
     const RIGHT_ARROW = "\u27A1";
     const DOWN_ARROW = "\u2B07";
     const CIRCLED_DOT = "\u2299";
+    const BOLT = "\u26A1";
     const isRepos = getIsRepos();
 
     const tableSort = searchArray ? SCORE_SORT : (isRepos ? REPO_SORT : PACKAGE_SORT);
@@ -363,7 +365,7 @@ layout: default
       { title:"Package", field:"url", width:200,
         formatter:"link", formatterParams:{labelField:"package", urlPrefix:"{{site.baseurl}}"}},
       { title:"Description", field:"description", minWidth:isRepos ? 160: 300},
-      { title:STAR, field:"released", width:40, formatter:"tickCross", headerTooltip:"released: release status", hozAlign:"center",
+      { title:BOLT, field:"released", width:40, formatter:"tickCross", headerTooltip:"released: release status", hozAlign:"center",
         formatterParams: {allowTruthy: true, allowEmpty: true}},
       { title:LEFT_ARROW, field:"pkg_deps", width:40, headerTooltip:"pkg_deps: package dependency count"},
       { title:RIGHT_ARROW, field:"dependants", width:40, headerTooltip:"dependants: package used by count"},
@@ -372,6 +374,11 @@ layout: default
           return sorterParams.indexOf(a) - sorterParams.indexOf(b);
         }, sorterParams:['ros_core', 'ros_base', 'desktop', 'desktop_full']},
       { title:DOWN_ARROW, field:"downloads", width:40, headerTooltip:"package download counts, scaled 0 - 99"},
+      { title:STAR, field:"stars", width:40, sorter:"number", headerTooltip:"Repo stars", formatter:function(cell, formatterParams, onRendered) {
+        const value = cell.getValue();
+        if (value === null || value === '') return '';
+        return value >= 10000 ? Math.floor(value / 1000).toString() + "K" : value.toString();
+      }},
       { title:"Authors", field:"authors", width:120},
       { title:"Maintainers", field:"maintainers", width:120},
       { title:"Org", field:"org", width:100},
@@ -412,7 +419,8 @@ layout: default
       tableOptions['groupHeader'] = (value, count, data, group) => {
         header = 
           `<span style='color:#d00;'>${data[0]['last_commit_time']}</span>` +
-          `<span style='margin-left:11px;'><a href="/r/${value}/#${distro}">${value}</span>`;
+          `<span style='margin-left:11px;'><a href="/r/${value}/#${distro}">${value}</a></span>` +
+          `<span style='margin-left:11px;' title='${data[0]['repo_description']}'>${data[0]['repo_description']}</span>`
         return header;
       }
     }

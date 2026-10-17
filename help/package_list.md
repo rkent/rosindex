@@ -13,12 +13,13 @@ breadcrumbs: ['help']
 
 - Package: Package name.
 - Description: Package description.
-- Release status (★): Release status of the package. A checkmark signifies the package is released.
+- Release status (⚡): Release status of the package. A checkmark signifies the package is released.
 - Core (⊙): Is this a dependency of a core package? (a dependent of ros_core, ros_base, desktop, or desktop_full).
 - Last commit date (📅): The last date a commit was made to the package's repository.
 - Package dependency count (⬅): How many packages this package depends on.
 - Package used by count(➡): How many packages use this package as a dependency.
 - Downloads (⬇): How often the package was downloaded from packages.ros.org over the last three months, scaled 0 - 99 within each distro. 0 means no recorded downloads.
+- Stars (★): Github count of repo stars.
 - Authors: Names listed in package.xml as authors.
 - Maintainers: Names listed in package.xml as maintainers.
 - Repo: Repository containing this package.
@@ -46,7 +47,7 @@ The package name is split by underscore (_), and those individual terms are adde
 
 These fields are additionally searched:
 - readme: The 'readme' file included in the package repository.
-- tags: These mostly contains the page name split by '_', so that for example the package with name "avt_vimbra_camera" would have tags 'avt', 'vimbra', and 'camera'.
+- tags: The package name split by '_', so that for example the package with name "avt_vimbra_camera" would have tags 'avt', 'vimbra', and 'camera'. The GitHub topics of the package's repository are also added as tags, so for example packages in a repo with the topic "driver" have the tag 'driver'.
 - released: Is the package released? Has a value 'released' if released, otherwise empty.
 
 ### Example searches

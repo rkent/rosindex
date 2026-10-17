@@ -16,7 +16,7 @@ search_config=_config/search_index.yml
 
 .DEFAULT_GOAL := build
 .PHONY: build rebuild-dep-descriptions prepare-sources discover \
-        update scrape serve serve-devel test-build clean-sources clean-cache clean
+        update scrape github-scrape test-github-scrape serve serve-devel test-build clean-sources clean-cache clean
 
 PIP_FILE := _artifacts/pip_packages.json
 PIP_SCRIPT := _scripts/pip_packages.py
@@ -27,6 +27,9 @@ DEBIAN_SCRIPT := _scripts/debian_descriptions.rb
 DISCOVERY_SCRIPT = _ruby_libs/discovery.rb
 DISCOVERY_RESULTS = _artifacts/discovery.json
 DISCOVERY_ERRORS = _artifacts/discovery_errors.json
+GITHUB_SCRAPE_SCRIPT = _scripts/github_scrape.py
+GITHUB_SCRAPE_ERRORS = _artifacts/github_scrape_errors.json
+github_scrape_args ?=
 
 $(PIP_FILE):
 	@echo "Get pip descriptions file"
@@ -56,7 +59,15 @@ discover: prepare-sources
 	@echo "Rebuild discovery file that contains discovered repos"
 	bundle exec $(DISCOVERY_SCRIPT) --config=$(config_file),$(index_file)
 
-build: rebuild-dep-descriptions discover prepare-sources
+github-scrape:
+	@echo "Rebuild github scrape file from discovered repos"
+	python3 $(GITHUB_SCRAPE_SCRIPT) --config=$(config_file),$(index_file) --input_path=$(DISCOVERY_RESULTS) --error_path=$(GITHUB_SCRAPE_ERRORS) $(github_scrape_args)
+
+test-github-scrape:
+	@echo "Rebuild github scrape file for only the repos used by test-build"
+	python3 $(GITHUB_SCRAPE_SCRIPT) --config=$(config_file),$(index_file),$(devel_config_file) --input_path=$(DISCOVERY_RESULTS) --error_path=$(GITHUB_SCRAPE_ERRORS) $(github_scrape_args)
+
+build: rebuild-dep-descriptions discover github-scrape prepare-sources
 	bundle exec jekyll build --verbose --trace -d $(site_path) --config=$(config_file),$(index_file)
 
 prepare-sources:
@@ -79,7 +90,7 @@ serve:
 serve-devel:
 	bundle exec jekyll serve --host 0.0.0.0 --no-watch --trace -d $(site_path) --config=$(config_file),$(index_file),$(devel_config_file) --skip-initial-build
 
-test-build: $(PIP_FILE) $(DOWNLOADS_FILE) $(DEBIAN_FILE) $(DISCOVERY_RESULTS) prepare-sources
+test-build: $(PIP_FILE) $(DOWNLOADS_FILE) $(DEBIAN_FILE) $(DISCOVERY_RESULTS) test-github-scrape prepare-sources
 	bundle exec jekyll build --verbose --trace -d $(site_path) --config=$(config_file),$(index_file),$(devel_config_file)
 
 clean-sources:
