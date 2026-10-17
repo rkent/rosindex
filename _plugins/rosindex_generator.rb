@@ -779,6 +779,8 @@ class Indexer < Jekyll::Generator
 
       ['pull_requests', 'help_wanted', 'good_first_issue'].each do |type|
         (info.dig(type, 'items') || []).each do |item|
+          # PRs opened by bots such as mergify are not useful contribution suggestions
+          next if type == 'pull_requests' && item['bot']
           url = item['html_url']
           # an issue can be both help wanted and a good first issue
           if rows.key?(url)

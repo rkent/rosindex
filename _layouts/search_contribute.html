@@ -13,7 +13,7 @@ no_scroll: true
 
     <div class="row" style="height:var(--distro-height);">
       <div class="col-12" id="contribute-filters">
-        <input type="checkbox" class="btn-check type-filter" id="type-pull_requests" data-type="pull_requests" autocomplete="off" checked>
+        <input type="checkbox" class="btn-check type-filter" id="type-pull_requests" data-type="pull_requests" autocomplete="off">
         <label class="btn btn-sm btn-outline-primary" for="type-pull_requests">Pull requests</label>
         <input type="checkbox" class="btn-check type-filter" id="type-help_wanted" data-type="help_wanted" autocomplete="off" checked>
         <label class="btn btn-sm btn-outline-success" for="type-help_wanted">Help wanted</label>
@@ -81,6 +81,8 @@ no_scroll: true
   const DEFAULT_SORT = [{column:"updated_at", dir:"desc"}];
   const SCORE_SORT = [{column:"score", dir:"desc"}];
   const ALL_TYPES = ['pull_requests', 'help_wanted', 'good_first_issue'];
+  // Types shown when the querystring does not say otherwise.
+  const DEFAULT_TYPES = ['help_wanted', 'good_first_issue'];
   const TYPE_BADGES = {
     pull_requests: {label: 'PR', style: 'text-bg-primary'},
     help_wanted: {label: 'Help wanted', style: 'text-bg-success'},
@@ -155,9 +157,9 @@ no_scroll: true
   }
 
   function copyTypeFiltersToUI() {
-    // Set the type and draft checkboxes from the querystring (all types shown by default).
+    // Set the type and draft checkboxes from the querystring (DEFAULT_TYPES shown by default).
     var params = new URL(window.location.toString()).searchParams;
-    var types = params.has('types') ? params.get('types').split(',') : ALL_TYPES;
+    var types = params.has('types') ? params.get('types').split(',') : DEFAULT_TYPES;
     for (const type of ALL_TYPES) {
       $(`#type-${type}`).prop('checked', types.includes(type));
     }
@@ -167,7 +169,7 @@ no_scroll: true
   function copyTypeFiltersToQuery() {
     var url = new URL(window.location.toString());
     var types = getEnabledTypes();
-    if (types.length == ALL_TYPES.length) {
+    if (types.join(',') == DEFAULT_TYPES.join(',')) {
       url.searchParams.delete('types');
     } else {
       url.searchParams.set('types', types.join(','));
@@ -256,19 +258,21 @@ no_scroll: true
 
     columns = [ // Define Table Columns
       { title:"Type", field:"type", width:120, formatter:typeFormatter, tooltip:false},
-      { title:"#", field:"number", width:70, hozAlign:"right", sorter:"number",
-        formatter:"link", formatterParams:{urlField:"html_url", target:"_blank"}},
       { title:"Title", field:"title", minWidth:300,
         formatter:"link", formatterParams:{urlField:"html_url", target:"_blank"}},
       { title:"Repo", field:"repo", width:150,
         formatter:"link", formatterParams:{url:(cell) => `{{site.baseurl}}/r/${cell.getValue()}/`}},
-      { title:"Org", field:"org", width:120},
+      { title:"Org", field:"org", width:120,
+        formatter:"link", formatterParams:{target:"_blank",
+          url:(cell) => cell.getValue() ? `https://github.com/${encodeURIComponent(cell.getValue())}` : ''}},
       { title:STAR, field:"stars", width:50, sorter:"number", headerTooltip:"Repo stars", formatter:function(cell) {
         const value = cell.getValue();
         if (value === null || value === undefined || value === '') return '';
         return value >= 10000 ? Math.floor(value / 1000).toString() + "K" : value.toString();
       }},
-      { title:"Author", field:"author", width:120},
+      { title:"Author", field:"author", width:120, headerTooltip:"Author of the PR or issue",
+        formatter:"link", formatterParams:{target:"_blank",
+          url:(cell) => cell.getValue() ? `https://github.com/${encodeURIComponent(cell.getValue())}` : ''}},
       { title:"Created", field:"created_at", width:100, sorter:"date", sorterParams:{format:"yyyy-MM-dd"}},
       { title:"Updated", field:"updated_at", width:100, sorter:"date", sorterParams:{format:"yyyy-MM-dd"}},
       { title:"score", field:"score", sorter:"number", visible:false},

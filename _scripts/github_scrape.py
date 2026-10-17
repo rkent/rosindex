@@ -33,7 +33,7 @@ The results file is a dictionary keyed by repo uri, like:
     "good_first_issue": {"total": 0, "items": []},
     "pull_requests": {"total": 1, "items": [{"number": 12, "title": "...", "html_url": "...",
                                               "created_at": "2026-01-02", "updated_at": "2026-02-03",
-                                              "author": "someone", "draft": false}]}
+                                              "author": "someone", "bot": false, "draft": false}]}
   },
   ...
 }
@@ -68,9 +68,9 @@ REQUEST_TIMEOUT = 60
 
 # Fields to get for each repo. The contribution suggestion lists match those
 # shown by js/contribution_suggestions.js, plus dates and author for the contribute list.
-# isDraft only exists on pull requests.
-ISSUE_LIST_FIELDS = 'totalCount nodes { number title url createdAt updatedAt author { login } }'
-PR_LIST_FIELDS = 'totalCount nodes { number title url createdAt updatedAt author { login } isDraft }'
+# isDraft only exists on pull requests. The author __typename is 'Bot' for apps like mergify.
+ISSUE_LIST_FIELDS = 'totalCount nodes { number title url createdAt updatedAt author { __typename login } }'
+PR_LIST_FIELDS = 'totalCount nodes { number title url createdAt updatedAt author { __typename login } isDraft }'
 LIST_ORDER = 'orderBy: {field: CREATED_AT, direction: DESC}'
 REPO_FIELDS = f'''
   stargazerCount
@@ -161,6 +161,7 @@ def contribution_item(node):
         'updated_at': (node.get('updatedAt') or '')[:10],
         # author is null for deleted accounts
         'author': (node.get('author') or {}).get('login', ''),
+        'bot': (node.get('author') or {}).get('__typename') == 'Bot',
     }
     if 'isDraft' in node:
         item['draft'] = node['isDraft']

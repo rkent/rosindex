@@ -13,7 +13,7 @@ The list is collected from GitHub when **rosindex** is built, so it may be out o
 
 ## Types of items
 
-- **Pull requests (PR)**: Open pull requests. Reviewing and testing pull requests is a valuable way to help maintainers. A pull request still being worked on by its author is shown as a **Draft PR**.
+- **Pull requests (PR)**: Open pull requests. Reviewing and testing pull requests is a valuable way to help maintainers. A pull request still being worked on by its author is shown as a **Draft PR**. Pull requests opened by bots (such as mergify or dependabot) are not listed. Pull requests are hidden by default; click **Pull requests** to show them.
 - **Help wanted**: Open issues with the label `help wanted`, which maintainers use to ask for outside help.
 - **Good first issue**: Open issues with the label `good first issue`, which maintainers think are suitable for new contributors.
 
@@ -24,10 +24,9 @@ The buttons above the search field show or hide each type of item, and **Hide dr
 ## Fields in the contribute list
 
 - Type: The type(s) of the item, as described above.
-- \#: The GitHub issue or pull request number. Click it to open the item on GitHub.
 - Title: The title of the issue or pull request. Click it to open the item on GitHub.
 - Repo: The **rosindex** repository. Click it to see the repository page.
-- Org: The GitHub organization or user that owns the repository.
+- Org: The GitHub organization or user that owns the repository. Click it to open its GitHub page.
 - Stars (★): The number of GitHub stars of the repository.
 - Author: The GitHub user who opened the issue or pull request.
 - Created, Updated: The dates the item was created and last updated.
